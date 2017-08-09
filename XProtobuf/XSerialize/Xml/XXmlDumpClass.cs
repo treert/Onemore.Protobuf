@@ -60,21 +60,5 @@ namespace XSerialize.Xml
                 writer.WriteEndElement();
             }
         }
-
-        static IEnumerable<FieldInfo> GetFieldInfos(Type type)
-        {
-            var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .OrderBy(f => f.Name, StringComparer.Ordinal);
-
-            if (type.BaseType == null)
-            {
-                return fields;
-            }
-            else
-            {
-                var baseFields = GetFieldInfos(type.BaseType);
-                return baseFields.Concat(fields);
-            }
-        }
     }
 }

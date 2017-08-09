@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace XProtobuf
+namespace Onemore.XProtobuf
 {
-    public class Class1
+    public class PUtils
     {
     }
 }
