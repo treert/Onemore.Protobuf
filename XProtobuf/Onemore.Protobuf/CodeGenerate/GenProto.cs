@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,22 +9,31 @@ namespace Onemore.Protobuf.CodeGenerate
 {
     public static class GenProto
     {
-        public static string GenProto3(MessageManager mananger)
+        public static string GenProto3(MessageManager manager, string file = null)
         {
-            _buffer.Clear();
             _is_proto2 = false;
-            GenMessageManager(mananger);
-            return _buffer.ToString();
+            return InnerGenProto(manager, file);
         }
 
-        public static string GenProto2(MessageManager mananger)
+        public static string GenProto2(MessageManager manager, string file = null)
+        {
+            _is_proto2 = true;
+            return InnerGenProto(manager, file);
+        }
+
+        static string InnerGenProto(MessageManager manager, string file)
         {
             _buffer.Clear();
-            _is_proto2 = true;
-            GenMessageManager(mananger);
-            return _buffer.ToString();
+            GenMessageManager(manager);
+            var content = _buffer.ToString();
+            if (string.IsNullOrEmpty(file) == false)
+            {
+                File.WriteAllText(file, content, _utf8);
+            }
+            return content;
         }
 
+        static Encoding _utf8 = new UTF8Encoding(false, true);// utf-8 without bom
         static StringBuilder _buffer = new StringBuilder();
         private static void AppendFormat(string format, params object[] args)
         {
@@ -61,24 +71,26 @@ namespace Onemore.Protobuf.CodeGenerate
 
         static bool _is_proto2 = false;
 
-        static void GenMessageManager(MessageManager mananger)
+        static void GenMessageManager(MessageManager manager)
         {
             if(_is_proto2 == false)
             {
                 AppendLine(0, "syntax = \"proto3\";");
                 AppendLine();
             }
-            if(string.IsNullOrEmpty(mananger.m_namespace) == false)
+            AppendLine(0, "auto generate by Onemore.Protobuf");
+
+            if(string.IsNullOrEmpty(manager.m_namespace) == false)
             {
-                AppendLine(0, "package {0};", mananger.m_namespace);
+                AppendLine(0, "package {0};", manager.m_namespace);
                 AppendLine();
             }
-            foreach(var penum in mananger.m_enums.Values)
+            foreach(var penum in manager.m_enums.Values)
             {
                 GenEnum(penum);
                 AppendLine();
             }
-            foreach(var message in mananger.m_messages.Values)
+            foreach(var message in manager.m_messages.Values)
             {
                 GenMessage(message);
                 AppendLine();
@@ -112,19 +124,23 @@ namespace Onemore.Protobuf.CodeGenerate
             {
                 if(_is_proto2 && FieldFormat.CanBePacked(field.m_type))
                 {
-                    AppendLine(1, "repeated {0} {1} = {2} [packed=true];"
-                        , field.m_type_name, field.m_name, field.m_index);
+                    AppendLine(1, "repeated {0} {1} = {2} [packed=true];", field.m_type_name, field.m_name, field.m_index);
                 }
                 else
                 {
-                    AppendLine(1, "repeated {0} {1} = {2};"
-                        , field.m_type_name, field.m_name, field.m_index);
+                    AppendLine(1, "repeated {0} {1} = {2};", field.m_type_name, field.m_name, field.m_index);
                 }
             }
             else
             {
-                AppendLine(1, "{0} {1} = {2};"
-                        , field.m_type_name, field.m_name, field.m_index);
+                if(_is_proto2)
+                {
+                    AppendLine(1, "optional {0} {1} = {2};", field.m_type_name, field.m_name, field.m_index);
+                }
+                else
+                {
+                    AppendLine(1, "{0} {1} = {2};", field.m_type_name, field.m_name, field.m_index);
+                }
             }
         }
     }
