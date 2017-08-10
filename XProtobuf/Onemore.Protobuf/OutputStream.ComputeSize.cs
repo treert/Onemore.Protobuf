@@ -35,7 +35,7 @@ using System;
 /// <summary>
 /// modify by om
 /// </summary>
-namespace Onemore.XProtobuf
+namespace Onemore.Protobuf
 {
     // This part of CodedOutputStream provides all the static entry points that are used
     // by generated code and internally to compute the size of messages prior to being

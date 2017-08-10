@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Onemore.XProtobuf
+namespace Onemore.Protobuf
 {
     public class Node
     {
