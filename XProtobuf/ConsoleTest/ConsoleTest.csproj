@@ -50,13 +50,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\XProtobuf\XProtobuf.csproj">
+    <ProjectReference Include="..\Onemore.Protobuf\Onemore.Protobuf.csproj">
       <Project>{0bfe5a9c-438d-488f-b7cd-b8ffb71239e2}</Project>
-      <Name>XProtobuf</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\XSerialize\XSerialize.csproj">
-      <Project>{91cbbb7e-0cba-4fcb-8d10-d80ceb93288f}</Project>
-      <Name>XSerialize</Name>
+      <Name>Onemore.Protobuf</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
