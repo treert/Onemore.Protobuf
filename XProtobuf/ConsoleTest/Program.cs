@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Onemore.Protobuf;
+using Onemore.Protobuf.CodeGenerate;
 namespace ConsoleTest
 {
     class Program
@@ -33,6 +34,7 @@ namespace ConsoleTest
 
             faa.m_name = "a";
             faa.m_type = FieldFormat.FieldType.Int32;
+            faa.m_type_name = "int32";
             faa.m_index = 1;
 
             fab.m_name = "b";
@@ -42,6 +44,7 @@ namespace ConsoleTest
 
             fac.m_name = "c";
             fac.m_type = FieldFormat.FieldType.Int32;
+            fac.m_type_name = "int32";
             fac.m_index = 3;
             fac.m_is_array = true;
 
@@ -52,6 +55,7 @@ namespace ConsoleTest
 
             fbbb.m_name = "bb";
             fbbb.m_type = FieldFormat.FieldType.String;
+            fbbb.m_type_name = "string";
             fbbb.m_index = 1;
 
             MessageManager mananger = new MessageManager();
@@ -77,6 +81,10 @@ namespace ConsoleTest
                 Console.WriteLine(b.GetFieldNode<RepeatedNode>("c").Count());
                 Console.WriteLine(b.GetFieldNode<RepeatedNode>("c").GetArrayNode(2).ConvertToObj());
             }
+
+            Console.WriteLine(GenProto.GenProto3(mananger));
+            mananger.m_namespace = "X";
+            Console.WriteLine(GenProto.GenProto2(mananger));
         }
     }
 }

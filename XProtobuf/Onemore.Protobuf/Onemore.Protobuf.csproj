@@ -7,8 +7,8 @@
     <ProjectGuid>{0BFE5A9C-438D-488F-B7CD-B8FFB71239E2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>XProtobuf</RootNamespace>
-    <AssemblyName>XProtobuf</AssemblyName>
+    <RootNamespace>Onemore.Protobuf</RootNamespace>
+    <AssemblyName>Onemore.Protobuf</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CodeGenerate\GenProto.cs" />
     <Compile Include="FieldFormat.cs" />
     <Compile Include="InputStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -49,9 +50,7 @@
     <Compile Include="OutputStream.cs" />
     <Compile Include="WireFormat.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="core\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

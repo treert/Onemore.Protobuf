@@ -40,7 +40,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 
-namespace Onemore.XProtobuf
+namespace Onemore.Protobuf
 {
     /// <summary>
     /// > github.com/google/protobuf/cshape/**/CodedInputStream.cs

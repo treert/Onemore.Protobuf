@@ -24,6 +24,51 @@ namespace Onemore.Protobuf
             Fixed32, SFixed32, Float,
         }
 
+        public static string GetFieldTypeName(FieldType field_type)
+        {
+            switch (field_type)
+            {
+                case FieldType.InValid:
+                    throw new NotSupportedException();
+                case FieldType.Int32:
+                    return "int32";
+                case FieldType.UInt32:
+                    return "uint32";
+                case FieldType.Int64:
+                    return "int64";
+                case FieldType.UInt64:
+                    return "uint64";
+                case FieldType.Bool:
+                    return "bool";
+                case FieldType.Enum:
+                    throw new NotSupportedException();
+                case FieldType.SInt32:
+                    return "sint32";
+                case FieldType.SInt64:
+                    return "sint64";
+                case FieldType.String:
+                    return "string";
+                case FieldType.Bytes:
+                    return "bytes";
+                case FieldType.Message:
+                    throw new NotSupportedException();
+                case FieldType.Fixed64:
+                    return "fixed64";
+                case FieldType.SFixed64:
+                    return "sfixed64";
+                case FieldType.Double:
+                    return "double";
+                case FieldType.Fixed32:
+                    return "fixed32";
+                case FieldType.SFixed32:
+                    return "sfixed32";
+                case FieldType.Float:
+                    return "float";
+                default:
+                    throw new Exception();
+            }
+        }
+
         private const uint _varint_mask = (1 << (int)(FieldType.Int32)) 
             | (1 << (int)(FieldType.UInt32))
             | (1 << (int)(FieldType.Int64))

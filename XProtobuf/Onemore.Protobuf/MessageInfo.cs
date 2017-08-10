@@ -8,6 +8,7 @@ namespace Onemore.Protobuf
 {
     public class MessageManager
     {
+        public string m_namespace;
         public Dictionary<string, MessageInfo> m_messages = new Dictionary<string, MessageInfo>();
         public Dictionary<string, PEnum> m_enums = new Dictionary<string, PEnum>();
 
@@ -22,7 +23,7 @@ namespace Onemore.Protobuf
                 foreach(var item in message.Value.m_fields)
                 {
                     FieldInfo field = item.Value;
-                    message.Value.m_index_to_fileds[field.m_index] = field;
+                    message.Value.m_index_to_fileds.Add(field.m_index, field);
 
                     if(field.m_type == FieldFormat.FieldType.Message)
                     {
@@ -48,9 +49,9 @@ namespace Onemore.Protobuf
 
     public class MessageInfo
     {
+        public string m_name;
         public Dictionary<string, FieldInfo> m_fields = new Dictionary<string, FieldInfo>();
 
-        public string m_name;
         [NonSerialized]
         public Dictionary<int, FieldInfo> m_index_to_fileds = new Dictionary<int, FieldInfo>();
     }
@@ -60,7 +61,7 @@ namespace Onemore.Protobuf
         public string m_name;// field name
         public FieldFormat.FieldType m_type = FieldFormat.FieldType.InValid;
         public int m_index = 0;// 1. 1~15  2. 16~2047  3. ~(2^29 - 1 | 536,870,911), can not use 19000~19999
-        public string m_type_name = string.Empty;// enum and message need name to get ready type
+        public string m_type_name;
         public bool m_is_array = false;// repeated
 
         [NonSerialized]
@@ -75,6 +76,7 @@ namespace Onemore.Protobuf
 
     public class PEnum
     {
-        public Dictionary<string, uint> m_items = new Dictionary<string, uint>();
+        public string m_name;
+        public Dictionary<string, int> m_items = new Dictionary<string, int>();
     }
 }

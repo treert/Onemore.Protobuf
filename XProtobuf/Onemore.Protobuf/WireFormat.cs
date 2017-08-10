@@ -30,7 +30,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 
-namespace Onemore.XProtobuf
+namespace Onemore.Protobuf
 {
     /// <summary>
     /// This class is used internally by the Protocol Buffer Library and generated
