@@ -1,4 +1,39 @@
-﻿using System;
+﻿#region Copyright notice and license
+// Protocol Buffers - Google's data interchange format
+// Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#endregion
+
+// modify by om
+
+using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -11,6 +46,117 @@ namespace Onemore.XProtobuf
     /// </summary>
     public sealed partial class OutputStream
     {
+        interface IOutput
+        {
+            void WriteByte(byte b);
+            void WriteBytes(byte[] buffer, int offset, int length);
+            void Flush();
+        }
+
+        class BytesOutput:IOutput
+        {
+            byte[] _buffer;
+            int _pos = 0;
+            int _length = 0;
+
+            public BytesOutput(byte[] buffer)
+            {
+                _buffer = buffer;
+                _length = buffer.Length;
+            }
+
+            public BytesOutput(byte[] buffer, int offset, int length)
+            {
+                _buffer = buffer;
+                _pos = offset;
+                _length = length;
+            }
+
+            public void WriteByte(byte b)
+            {
+                if(_pos >= _length)
+                {
+                    throw new Exception("has no enough space");
+                }
+                _buffer[_pos] = b;
+                _pos++;
+            }
+
+            public void WriteBytes(byte[] buffer, int offset, int length)
+            {
+                if (_pos + length > _length)
+                {
+                    throw new Exception("has no enough space");
+                }
+                Buffer.BlockCopy(buffer, offset, _buffer, _pos, length);
+                _pos += length;
+            }
+
+            public void Flush()
+            {
+                
+            }
+        }
+
+        class StreamOutput:IOutput
+        {
+            Stream _stream;
+
+            public StreamOutput(Stream output)
+            {
+                _stream = output;
+            }
+
+            public void WriteByte(byte b)
+            {
+                _stream.WriteByte(b);
+            }
+
+            public void WriteBytes(byte[] buffer, int offset, int length)
+            {
+                _stream.Write(buffer, offset, length);
+            }
+
+            public void Flush()
+            {
+                _stream.Flush();
+            }
+        }
+
+        IOutput _output;
+
+        #region Consturction
+        public OutputStream(byte[] buffer)
+        {
+            _output = new BytesOutput(buffer);
+        }
+
+        public OutputStream(byte[] buffer, int offset, int length)
+        {
+            _output = new BytesOutput(buffer, offset, length);
+        }
+
+        public OutputStream(Stream output)
+        {
+            _output = new StreamOutput(output);
+        }
+        #endregion
+        
+        public static implicit operator OutputStream(Stream stream)
+        {
+            return new OutputStream(stream);
+        }
+
+        public static implicit operator OutputStream(byte[] buffer)
+        {
+            return new OutputStream(buffer);
+        }
+
+        public void Flush()
+        {
+            _output.Flush();
+        }
+
         #region Writing of values (not including tags)
         /// <summary>
         /// Writes a double field value, without a tag, to the stream.
@@ -333,7 +479,7 @@ namespace Onemore.XProtobuf
 
         internal void WriteRawByte(byte value)
         {
-            // todo
+            _output.WriteByte(value);
         }
 
         internal void WriteRawByte(uint value)
@@ -354,7 +500,7 @@ namespace Onemore.XProtobuf
         /// </summary>
         internal void WriteRawBytes(byte[] value, int offset, int length)
         {
-            // todo
+            _output.WriteBytes(value, offset, length);
         }
 
         #endregion

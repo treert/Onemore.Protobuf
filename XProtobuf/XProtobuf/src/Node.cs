@@ -8,17 +8,17 @@ namespace Onemore.XProtobuf
 {
     public class Node
     {
-        public virtual void WriteTo(OutputStream output)
+        internal virtual void InternalWriteTo(OutputStream output)
         {
             throw new NotImplementedException();
         }
 
-        public virtual void ReadFrom(InputStream input)
+        internal virtual void InternalReadFrom(InputStream input)
         {
             throw new NotImplementedException();
         }
 
-        public virtual void ComputeSize()
+        internal virtual void ComputeSize()
         {
             throw new NotImplementedException();
         }
@@ -34,7 +34,7 @@ namespace Onemore.XProtobuf
             return _size;
         }
 
-        public static Node CreateNodeByFieldInfo(FieldInfo field_info, bool check_array = true)
+        internal static Node CreateNodeByFieldInfo(FieldInfo field_info, bool check_array = true)
         {
             if (check_array && field_info.m_is_array)
             {
@@ -120,7 +120,9 @@ namespace Onemore.XProtobuf
             FieldInfo field_info = null;
             if(_message.m_fields.TryGetValue(name, out field_info))
             {
-                return Node.CreateNodeByFieldInfo(field_info);
+                var node = Node.CreateNodeByFieldInfo(field_info);
+                _fields.Add(name, node);
+                return node;
             }
             else
             {
@@ -144,12 +146,65 @@ namespace Onemore.XProtobuf
             return (T)GetFieldNode(name).ConvertToObj();
         }
 
-        public override void ReadFrom(InputStream input)
+        public void WriteTo(OutputStream output)
         {
-            
+            ComputeSize();
+            InternalWriteTo(output);
+            output.Flush();
         }
 
-        public override void WriteTo(OutputStream output)
+        public void ReadFrom(InputStream input)
+        {
+            InternalReadFrom(input);
+        }
+
+        public static MessageNode Create(MessageInfo message)
+        {
+            var node = new MessageNode(message);
+            return node;
+        }
+
+        internal override void InternalReadFrom(InputStream input)
+        {
+            int size = input.ReadLength();
+            var end_pos = input.Position + size;
+            _size = size + OutputStream.ComputeLengthSize(_inner_size);
+            while(input.Position < end_pos)
+            {
+                uint tag = input.ReadTag();
+                WireFormat.WireType wire_type = WireFormat.GetTagWireType(tag);
+                int index = WireFormat.GetTagFieldNumber(tag);
+                FieldInfo field_info;
+                if(_message.m_index_to_fileds.TryGetValue(index, out field_info))
+                {
+
+                    Node node;
+                    if(_fields.TryGetValue(field_info.m_name, out node) == false)
+                    {
+                        node = Node.CreateNodeByFieldInfo(field_info);
+                        _fields.Add(field_info.m_name, node);
+                    }
+                    if(field_info.m_is_array)
+                    {
+                        (node as RepeatedNode).ReadFromForMessageNode(input, wire_type);
+                    }
+                    else
+                    {
+                        node.InternalReadFrom(input);
+                    }
+                }
+                else
+                {
+                    input.SkipField(wire_type);
+                }
+            }
+            if (input.Position != end_pos)
+            {
+                throw new Exception();
+            }
+        }
+
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteLength(_inner_size);
             foreach (var item in _fields)
@@ -157,13 +212,16 @@ namespace Onemore.XProtobuf
                 var field = item.Value;
                 var name = item.Key;
                 var field_info = _message.m_fields[name];
-                output.WriteTag(field_info.m_tag);
-                field.WriteTo(output);
+                if(field_info.m_is_array == false)
+                {
+                    output.WriteTag(field_info.m_tag);
+                }
+                field.InternalWriteTo(output);
             }
         }
 
         private int _inner_size = 0;
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _inner_size = 0;
             foreach (var item in _fields)
@@ -234,8 +292,13 @@ namespace Onemore.XProtobuf
         }
 
         private int _inner_size = 0;
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
+            if(_items.Count == 0)
+            {
+                _size = 0;
+                return;
+            }
             int tag_size = OutputStream.ComputeTagSize(_field_info.m_tag);
             if (_field_info.m_is_packed)
             {
@@ -260,14 +323,57 @@ namespace Onemore.XProtobuf
             }
         }
 
-        public override void ReadFrom(InputStream input)
+        internal void ReadFromForMessageNode(InputStream input, WireFormat.WireType wire_type)
         {
-            base.ReadFrom(input);
+            if(wire_type == WireFormat.WireType.LengthDelimited && _field_info.m_is_packed)
+            {
+                int len = input.ReadLength();
+                var end_pos = input.Position + len;
+                while(input.Position < end_pos)
+                {
+                    Node node = AddNewNode();
+                    node.InternalReadFrom(input);
+                }
+                if(input.Position != end_pos)
+                {
+                    throw new Exception();
+                }
+            }
+            else
+            {
+                Node node = AddNewNode();
+                node.InternalReadFrom(input);
+            }
         }
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalReadFrom(InputStream input)
         {
-            base.WriteTo(output);
+            base.InternalReadFrom(input);
+        }
+
+        internal override void InternalWriteTo(OutputStream output)
+        {
+            if(_items.Count == 0)
+            {
+                return;
+            }
+            if(_field_info.m_is_packed)
+            {
+                output.WriteTag(_field_info.m_tag);
+                output.WriteLength(_inner_size);
+                foreach(var node in _items)
+                {
+                    node.InternalWriteTo(output);
+                }
+            }
+            else
+            {
+                foreach(var node in _items)
+                {
+                    output.WriteTag(_field_info.m_tag);
+                    node.InternalWriteTo(output);
+                }
+            }
         }
     }
 
@@ -285,17 +391,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteInt32(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadInt32();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeInt32Size(value);
         }
@@ -306,17 +412,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteUInt32(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadUInt32();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeUInt32Size(value);
         }
@@ -326,17 +432,17 @@ namespace Onemore.XProtobuf
     {
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteInt64(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadInt64();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeInt64Size(value);
         }
@@ -346,17 +452,17 @@ namespace Onemore.XProtobuf
     {
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteUInt64(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadUInt64();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeUInt64Size(value);
         }
@@ -366,17 +472,17 @@ namespace Onemore.XProtobuf
     {
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteSInt32(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadSInt32();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeSInt32Size(value);
         }
@@ -387,17 +493,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteSInt64(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadSInt64();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeSInt64Size(value);
         }
@@ -407,17 +513,17 @@ namespace Onemore.XProtobuf
     {
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteBool(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadBool();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeBoolSize(value);
         }
@@ -426,17 +532,17 @@ namespace Onemore.XProtobuf
     public class EnumNode : ValueNode<int>
     {
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteEnum(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadEnum();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeEnumSize(value);
         }
@@ -447,17 +553,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteFixed64(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadFixed64();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeFixed64Size(value);
         }
@@ -468,17 +574,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteSFixed64(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadSFixed64();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeSFixed64Size(value);
         }
@@ -489,17 +595,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteDouble(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadDouble();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeDoubleSize(value);
         }
@@ -510,17 +616,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteString(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadString();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeStringSize(value);
         }
@@ -531,17 +637,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteBytes(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadBytes();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeBytesSize(value);
         }
@@ -552,17 +658,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteFixed32(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadFixed32();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeFixed32Size(value);
         }
@@ -573,17 +679,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteSFixed32(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadSFixed32();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeSFixed32Size(value);
         }
@@ -594,17 +700,17 @@ namespace Onemore.XProtobuf
 
 
 
-        public override void WriteTo(OutputStream output)
+        internal override void InternalWriteTo(OutputStream output)
         {
             output.WriteFloat(value);
         }
 
-        public override void ReadFrom(InputStream input)
+        internal override void InternalReadFrom(InputStream input)
         {
             value = input.ReadFloat();
         }
 
-        public override void ComputeSize()
+        internal override void ComputeSize()
         {
             _size = OutputStream.ComputeFloatSize(value);
         }

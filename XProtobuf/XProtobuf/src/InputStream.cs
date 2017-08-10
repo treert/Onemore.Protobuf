@@ -1,4 +1,39 @@
-﻿using System;
+﻿#region Copyright notice and license
+// Protocol Buffers - Google's data interchange format
+// Copyright 2008 Google Inc.  All rights reserved.
+// https://developers.google.com/protocol-buffers/
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+//     * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//     * Redistributions in binary form must reproduce the above
+// copyright notice, this list of conditions and the following disclaimer
+// in the documentation and/or other materials provided with the
+// distribution.
+//     * Neither the name of Google Inc. nor the names of its
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#endregion
+
+// modify by om
+
+using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,6 +47,179 @@ namespace Onemore.XProtobuf
     /// </summary>
     public sealed class InputStream
     {
+
+        interface IInput
+        {
+            void ReadBytes(byte[] buffer);
+            byte ReadByte();
+            long GetPos();
+            void Skip(int size);
+        }
+
+        class BytesInput: IInput
+        {
+
+            byte[] _buffer = null;
+            int _pos = 0;
+            int _length = 0;
+
+            public BytesInput(byte[] buffer)
+            {
+                _buffer = buffer;
+                _pos = 0;
+                _length = buffer.Length;
+            }
+
+            public BytesInput(byte[] buffer, int offset, int length)
+            {
+                _buffer = buffer;
+                _pos = offset;
+                _length = length;
+            }
+
+            public void ReadBytes(byte[] buffer)
+            {
+                if(_pos + buffer.Length > _length)
+                {
+                    throw new Exception("has not enough data");
+                }
+                Buffer.BlockCopy(_buffer, _pos, buffer, 0, buffer.Length);
+                _pos += buffer.Length;
+            }
+
+            public byte ReadByte()
+            {
+                if (_pos + 1 > _length)
+                {
+                    throw new Exception("has not enough data");
+                }
+                byte ret = _buffer[_pos];
+                _pos++;
+                return ret;
+            }
+
+            public long GetPos()
+            {
+                return _pos;
+            }
+
+            public void Skip(int size)
+            {
+                if (_pos + size > _length)
+                {
+                    throw new Exception("has not enough data");
+                }
+                _pos += size;
+            }
+        }
+
+        class StreamInput:IInput
+        {
+            Stream _stream;
+            int _pos = 0;
+            int _length = 0;
+
+            public StreamInput(Stream input)
+            {
+                _stream = input;
+            }
+
+            public void ReadBytes(byte[] buffer)
+            {
+                int len = _stream.Read(buffer, 0, buffer.Length);
+                if(len < buffer.Length)
+                {
+                    throw new Exception("has not enough data");
+                }
+            }
+
+            public byte ReadByte()
+            {
+                int data = _stream.ReadByte();
+                if(data == -1)
+                {
+                    throw new Exception("has not enough data");
+                }
+                return (byte)data;
+            }
+
+            public long GetPos()
+            {
+                return _stream.Position;
+            }
+
+            public void Skip(int size)
+            {
+                // assert _stream.CanSeek
+                long pre_len = _stream.Position;
+                _stream.Position += size;
+                if(_stream.Position != pre_len + size)
+                {
+                    throw new Exception("skip stream failed, has no enough data");
+                }
+            }
+        }
+
+        IInput _input;
+
+        /// <summary>
+        /// Creates a new <see cref="InputStream"/> reading data from the given byte array.
+        /// </summary>
+        public InputStream(byte[] buffer)
+        {
+            _input = new BytesInput(buffer);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="InputStream"/> that reads from the given byte array slice.
+        /// </summary>
+        public InputStream(byte[] buffer, int offset, int length)
+        {
+            // assert offset >= 0 and length >=0 and buffer.Length >= offset + length
+            // no zuo no die
+            _input = new BytesInput(buffer, offset, length);
+        }
+
+        /// <summary>
+        /// Creates a new <see cref="InputStream"/> that reads from the given stream.
+        /// The given stream should CanSeek
+        /// </summary>
+        /// <param name="input"></param>
+        public InputStream(Stream input)
+        {
+            // assert input.CanSeek
+            _input = new StreamInput(input);
+        }
+
+        public static implicit operator InputStream(Stream stream)
+        {
+            return new InputStream(stream);
+        }
+
+        public static implicit operator InputStream(byte[] buffer)
+        {
+            return new InputStream(buffer);
+        }
+
+        /// <summary>
+        /// Returns the current position in the input stream, or the position in the input buffer
+        /// </summary>
+        public long Position
+        {
+            get
+            {
+                return _input.GetPos();
+            }
+        }
+
+        /// <summary>
+        /// Reads field Tag from the stream.
+        /// </summary>
+        public uint ReadTag()
+        {
+            return ReadRawVarint32();
+        }
+
         /// <summary>
         /// Reads a double field from the stream.
         /// </summary>
@@ -171,14 +379,15 @@ namespace Onemore.XProtobuf
         /// </summary>
         internal byte ReadRawByte()
         {
-            // todo@om 
-            return 0;
+            return _input.ReadByte();
         }
 
 
         internal byte[] ReadRawBytes(int size)
         {
-            return new byte[0];
+            byte[] buffer = new byte[size];
+            _input.ReadBytes(buffer);
+            return buffer;
         }
 
         /// <summary>
@@ -206,7 +415,7 @@ namespace Onemore.XProtobuf
                 }
                 shift += 7;
             }
-            throw new Exception("InvalidProtocolBufferException.MalformedVarint");
+            throw new Exception("ReadRawVarint64 error");
             //throw InvalidProtocolBufferException.MalformedVarint();
         }
 
@@ -265,6 +474,54 @@ namespace Onemore.XProtobuf
         internal static long DecodeZigZag64(ulong n)
         {
             return (long)(n >> 1) ^ -(long)(n & 1);
+        }
+
+
+        /// <summary>
+        /// Skips the data for the field with the tag we've just read.
+        /// This should be called directly after <see cref="ReadTag"/>, when
+        /// the caller wishes to skip an unknown field.
+        /// </summary>
+        /// <remarks>
+        /// This method throws <see cref="InvalidProtocolBufferException"/> if the last-read tag was an end-group tag.
+        /// If a caller wishes to skip a group, they should skip the whole group, by calling this method after reading the
+        /// start-group tag. This behavior allows callers to call this method on any field they don't understand, correctly
+        /// resulting in an error if an end-group tag has not been paired with an earlier start-group tag.
+        /// </remarks>
+        /// <exception cref="InvalidProtocolBufferException">The last tag was an end-group tag</exception>
+        /// <exception cref="InvalidOperationException">The last read operation read to the end of the logical stream</exception>
+        public void SkipField(WireFormat.WireType wire_type)
+        {
+            switch (wire_type)
+            {
+                case WireFormat.WireType.StartGroup:
+                    throw new NotSupportedException();
+                case WireFormat.WireType.EndGroup:
+                    throw new NotSupportedException();
+                case WireFormat.WireType.Fixed32:
+                    ReadFixed32();
+                    break;
+                case WireFormat.WireType.Fixed64:
+                    ReadFixed64();
+                    break;
+                case WireFormat.WireType.LengthDelimited:
+                    var length = ReadLength();
+                    SkipRawBytes(length);
+                    break;
+                case WireFormat.WireType.Varint:
+                    ReadRawVarint32();
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Reads and discards <paramref name="size"/> bytes.
+        /// </summary>
+        /// <exception cref="InvalidProtocolBufferException">the end of the stream
+        /// or the current limit was reached</exception>
+        private void SkipRawBytes(int size)
+        {
+            _input.Skip(size);
         }
     }
 }

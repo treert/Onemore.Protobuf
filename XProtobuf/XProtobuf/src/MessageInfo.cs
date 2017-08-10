@@ -19,10 +19,11 @@ namespace Onemore.XProtobuf
         {
             foreach(var message in m_messages)
             {
-                message.Value.m_name = message.Key;
                 foreach(var item in message.Value.m_fields)
                 {
                     FieldInfo field = item.Value;
+                    message.Value.m_index_to_fileds[field.m_index] = field;
+
                     if(field.m_type == FieldFormat.FieldType.Message)
                     {
                         field.m_message = m_messages[field.m_type_name];
@@ -49,8 +50,9 @@ namespace Onemore.XProtobuf
     {
         public Dictionary<string, FieldInfo> m_fields = new Dictionary<string, FieldInfo>();
 
-        [NonSerialized]
         public string m_name;
+        [NonSerialized]
+        public Dictionary<int, FieldInfo> m_index_to_fileds = new Dictionary<int, FieldInfo>();
     }
 
     public class FieldInfo
