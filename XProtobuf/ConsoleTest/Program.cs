@@ -77,14 +77,24 @@ namespace ConsoleTest
                 var b = MessageNode.Create(ma);
                 memory.Position = 0;
                 b.ReadFrom(memory);
+                Console.WriteLine("dynamic code:");
                 Console.WriteLine(b.GetFieldNode<MessageNode>("b").GetFieldNode("bb").ConvertToObj());
                 Console.WriteLine(b.GetFieldNode<RepeatedNode>("c").Count());
                 Console.WriteLine(b.GetFieldNode<RepeatedNode>("c").GetArrayNode(2).ConvertToObj());
+
+                var xa = new XProto.A();
+                memory.Position = 0;
+                xa.ReadFrom(memory);
+                Console.WriteLine("static code:");
+                Console.WriteLine(xa.b.bb);
+                Console.WriteLine(xa.c.Count);
+                Console.WriteLine(xa.c[2]);
             }
 
-            Console.WriteLine(GenProto.GenProto3(mananger));
-            mananger.m_namespace = "X";
-            Console.WriteLine(GenProto.GenProto2(mananger));
+            //Console.WriteLine(GenProto.GenProto3(mananger));
+            //Console.WriteLine(GenProto.GenProto2(mananger));
+            //Console.WriteLine(GenCSharp.GenCode(mananger));
+            //Console.WriteLine(GenCSharp.GenCode(mananger,"../../XProto.cs"));
         }
     }
 }

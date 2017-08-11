@@ -8,7 +8,7 @@ namespace Onemore.Protobuf
 {
     public class MessageManager
     {
-        public string m_namespace;
+        public string m_namespace = "XProto";
         public Dictionary<string, MessageInfo> m_messages = new Dictionary<string, MessageInfo>();
         public Dictionary<string, PEnum> m_enums = new Dictionary<string, PEnum>();
 

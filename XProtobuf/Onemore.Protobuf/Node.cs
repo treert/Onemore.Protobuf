@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using WireType = Onemore.Protobuf.WireFormat.WireType;
 namespace Onemore.Protobuf
 {
     public class Node
@@ -148,9 +149,18 @@ namespace Onemore.Protobuf
 
         public void WriteTo(OutputStream output)
         {
-            ComputeSize();
+            if(_size == 0)
+            {
+                ComputeSize();
+            }
             InternalWriteTo(output);
             output.Flush();
+        }
+
+        public int CalculateSize()
+        {
+            ComputeSize();
+            return _size;
         }
 
         public void ReadFrom(InputStream input)
@@ -168,7 +178,6 @@ namespace Onemore.Protobuf
         {
             int size = input.ReadLength();
             var end_pos = input.Position + size;
-            _size = size + OutputStream.ComputeLengthSize(_inner_size);
             while(input.Position < end_pos)
             {
                 uint tag = input.ReadTag();

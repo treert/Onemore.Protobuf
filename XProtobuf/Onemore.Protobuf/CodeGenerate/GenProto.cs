@@ -76,9 +76,9 @@ namespace Onemore.Protobuf.CodeGenerate
             if(_is_proto2 == false)
             {
                 AppendLine(0, "syntax = \"proto3\";");
-                AppendLine();
             }
-            AppendLine(0, "auto generate by Onemore.Protobuf");
+            AppendLine(0, "// auto generate by Onemore.Protobuf, do not edit!!");
+            AppendLine();
 
             if(string.IsNullOrEmpty(manager.m_namespace) == false)
             {
@@ -101,7 +101,7 @@ namespace Onemore.Protobuf.CodeGenerate
         static void GenEnum(PEnum penum)
         {
             AppendLine(0, "enum {0} {{", penum.m_name);
-            foreach(var item in penum.m_items)
+            foreach(var item in penum.m_items.OrderBy(item_ => item_.Value))
             {
                 AppendLine(1, "{0} = {1};", item.Key, item.Value);
             }
@@ -122,7 +122,7 @@ namespace Onemore.Protobuf.CodeGenerate
         {
             if(field.m_is_array)
             {
-                if(_is_proto2 && FieldFormat.CanBePacked(field.m_type))
+                if(_is_proto2 && field.m_is_packed)
                 {
                     AppendLine(1, "repeated {0} {1} = {2} [packed=true];", field.m_type_name, field.m_name, field.m_index);
                 }
