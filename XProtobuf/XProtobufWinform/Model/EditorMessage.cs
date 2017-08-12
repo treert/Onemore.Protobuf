@@ -25,6 +25,47 @@ namespace XProtobufWinform.Model
             return ret;
         }
 
+        public bool CheckNameCanUse(string name)
+        {
+            if(GetByName(name) != null)
+            {
+                return false;
+            }
+            if(GetBaseTypes().ContainsKey(name))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public Dictionary<string, FieldFormat.FieldType> GetBaseTypes()
+        {
+            Dictionary<string, FieldFormat.FieldType> dic = new Dictionary<string, FieldFormat.FieldType>();
+            foreach (FieldFormat.FieldType f in Enum.GetValues(typeof(FieldFormat.FieldType)))
+            {
+                if (f != FieldFormat.FieldType.Message && f != FieldFormat.FieldType.Enum && f != FieldFormat.FieldType.InValid)
+                {
+                    dic.Add(FieldFormat.GetFieldTypeName(f), f);
+                }
+            }
+            return dic;
+        }
+
+        public Dictionary<string, FieldFormat.FieldType> GetDefineTypes()
+        {
+            Dictionary<string, FieldFormat.FieldType> dic = new Dictionary<string, FieldFormat.FieldType>();
+            foreach(var f in _message_mgr.m_enums.Values)
+            {
+                dic.Add(f.m_name, FieldFormat.FieldType.Enum);
+            }
+            foreach (var f in _message_mgr.m_messages.Values)
+            {
+                dic.Add(f.m_name, FieldFormat.FieldType.Message);
+            }
+            return dic;
+        }
+
         public void AddMessage(EditorMessage message)
         {
             m_editor_messages.Add(message.Name, message);
@@ -162,7 +203,7 @@ namespace XProtobufWinform.Model
                 }
             }
             return _used_by_dic;
-        } 
+        }
     }
 
     public class EditorMessage

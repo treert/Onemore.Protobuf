@@ -83,6 +83,18 @@
     <Compile Include="Form1.Designer.cs">
       <DependentUpon>Form1.cs</DependentUpon>
     </Compile>
+    <Compile Include="MessageEditDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MessageEditDialog.Designer.cs">
+      <DependentUpon>MessageEditDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="MessageFieldEditDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="MessageFieldEditDialog.Designer.cs">
+      <DependentUpon>MessageFieldEditDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Model\EditorConf.cs" />
     <Compile Include="Model\EditorMessage.cs" />
     <Compile Include="Program.cs" />
@@ -96,6 +108,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MessageEditDialog.resx">
+      <DependentUpon>MessageEditDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="MessageFieldEditDialog.resx">
+      <DependentUpon>MessageFieldEditDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

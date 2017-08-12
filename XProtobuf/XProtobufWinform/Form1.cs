@@ -58,7 +58,7 @@ namespace XProtobufWinform
         private void ToolStripMenuItemModifyEnum_Click(object sender, EventArgs e)
         {
             var message = GetSelectedMessage(listBoxEnum);
-            if(message != null)
+            if(message == null)
             {
                 MessageBox.Show("Has not selected Enum");
                 return;
@@ -189,12 +189,15 @@ namespace XProtobufWinform
             LoadConf(work_dir);
         }
 
+        private bool _is_loading_conf = false;
         private void LoadConf(string file)
         {
+            _is_loading_conf = true;
             Command.LoadConf(file);
             RefreshTabSettingPage();
             RefreshMessageBoxNames("", true);
             RefreshMessageBoxNames("", false);
+            _is_loading_conf = false;
         }
 
         private void RefreshTabSettingPage()
@@ -206,26 +209,86 @@ namespace XProtobufWinform
             textBoxCSharpFileOutPath.Text = EditorConf.singleton.m_CSharpFileOutPath;
         }
 
-        private void UpdateTabSettingPage()
+        private void UpdateTabSettingPage(object sender, EventArgs e)
         {
-            EditorConf.singleton.m_conf_file = textBoxCurrentWorkDir.Text.Trim();
-            EditorConf.singleton.m_ProtoBinFilePath = textBoxProtoBinFilePath.Text.Trim();
-            EditorConf.singleton.m_ProtoFileOutPath = textBoxProtoFileOutPath.Text.Trim();
-            EditorConf.singleton.m_CSharpFileOutPath = textBoxCSharpFileOutPath.Text.Trim();
-            Command.SaveConfData();
+            if(_is_loading_conf == false)
             {
-                var name = textBoxNameSpace.Text.Trim();
-                if (name != EditorMessageManager.singleton.NameSpace)
+                EditorConf.singleton.m_conf_file = textBoxCurrentWorkDir.Text.Trim();
+                EditorConf.singleton.m_ProtoBinFilePath = textBoxProtoBinFilePath.Text.Trim();
+                EditorConf.singleton.m_ProtoFileOutPath = textBoxProtoFileOutPath.Text.Trim();
+                EditorConf.singleton.m_CSharpFileOutPath = textBoxCSharpFileOutPath.Text.Trim();
+                Command.SaveConfData();
                 {
-                    EditorMessageManager.singleton.NameSpace = name;
-                    Command.SaveMessageData();
+                    var name = textBoxNameSpace.Text.Trim();
+                    if (name != EditorMessageManager.singleton.NameSpace)
+                    {
+                        EditorMessageManager.singleton.NameSpace = name;
+                        Command.SaveMessageData();
+                    }
                 }
             }
         }
 
-        private void textBoxNameSpace_TextChanged(object sender, EventArgs e)
+        private void textBoxSearchMessage_TextChanged(object sender, EventArgs e)
         {
+            RefreshMessageBoxNames(textBoxSearchEnum.Text, false);
+        }
 
+        private void ToolStripMenuItemAddMessage_Click(object sender, EventArgs e)
+        {
+            // New Message
+            var dialog = new MessageEditDialog(null);
+            if(dialog.ShowDialog() == DialogResult.OK)
+            {
+                var message = dialog.m_Message;
+                EditorMessageManager.singleton.AddMessage(message);
+                Command.SaveMessageData();
+                listBoxMessage.Items.Add(message.Name);
+            }
+        }
+
+        private void ToolStripMenuItemModifyMessage_Click(object sender, EventArgs e)
+        {
+            // Modify Message
+            var message = GetSelectedMessage(listBoxMessage);
+            if (message == null)
+            {
+                MessageBox.Show("Has not selected Message");
+                return;
+            }
+
+            // editor message
+            var dialog = new MessageEditDialog(message.Clone());
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                EditorMessageManager.singleton.UpdateMessage(dialog.m_Message, message);
+                Command.SaveMessageData();
+                UpdateRichText(richTextBoxMessage, message);
+            }
+        }
+
+        private void ToolStripMenuItemDeleteMessage_Click(object sender, EventArgs e)
+        {
+            // Delete Message
+            var message = GetSelectedMessage(listBoxMessage);
+            if (message == null)
+            {
+                MessageBox.Show("Has not select Message");
+                return;
+            }
+            if (EditorMessageManager.singleton.CheckMessageHasBeDepends(message))
+            {
+                MessageBox.Show("Message [" + listBoxEnum.Text + "] has be used by some message, check it.");
+                return;
+            }
+            EditorMessageManager.singleton.DeleteMessage(message);
+            Command.SaveMessageData();
+            UpdateRichText(richTextBoxMessage, message, "");
+        }
+
+        private void genCodeToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Command.GenCode();
         }
     }
 }

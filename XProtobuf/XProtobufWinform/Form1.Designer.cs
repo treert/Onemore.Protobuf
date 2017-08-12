@@ -39,7 +39,7 @@
             this.buttonSearchEnum = new System.Windows.Forms.Button();
             this.textBoxSearchEnum = new System.Windows.Forms.TextBox();
             this.listBoxEnum = new System.Windows.Forms.ListBox();
-            this.enumListContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.EnumListContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.ToolStripMenuItemAddEnum = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolStripMenuItemModifyEnum = new System.Windows.Forms.ToolStripMenuItem();
             this.ToolStripMenuItemDeleteEnum = new System.Windows.Forms.ToolStripMenuItem();
@@ -50,6 +50,10 @@
             this.textBoxSearchMessage = new System.Windows.Forms.TextBox();
             this.button1 = new System.Windows.Forms.Button();
             this.listBoxMessage = new System.Windows.Forms.ListBox();
+            this.MessageContextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.ToolStripMenuItemAddMessage = new System.Windows.Forms.ToolStripMenuItem();
+            this.ToolStripMenuItemModifyMessage = new System.Windows.Forms.ToolStripMenuItem();
+            this.ToolStripMenuItemDeleteMessage = new System.Windows.Forms.ToolStripMenuItem();
             this.richTextBoxMessage = new System.Windows.Forms.RichTextBox();
             this.richTextBox2 = new System.Windows.Forms.RichTextBox();
             this.tabPageSetting = new System.Windows.Forms.TabPage();
@@ -63,13 +67,15 @@
             this.label3 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
             this.label1 = new System.Windows.Forms.Label();
+            this.genCodeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.genCodeToolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.tabControl1.SuspendLayout();
             this.tabPageEnum.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.panel2.SuspendLayout();
             this.tableLayoutPanel3.SuspendLayout();
             this.panel3.SuspendLayout();
-            this.enumListContextMenuStrip.SuspendLayout();
+            this.EnumListContextMenuStrip.SuspendLayout();
             this.tabPageMessage.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -77,6 +83,7 @@
             this.splitContainer1.SuspendLayout();
             this.tableLayoutPanel2.SuspendLayout();
             this.panel1.SuspendLayout();
+            this.MessageContextMenuStrip.SuspendLayout();
             this.tabPageSetting.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -185,7 +192,7 @@
             // 
             // listBoxEnum
             // 
-            this.listBoxEnum.ContextMenuStrip = this.enumListContextMenuStrip;
+            this.listBoxEnum.ContextMenuStrip = this.EnumListContextMenuStrip;
             this.listBoxEnum.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listBoxEnum.FormattingEnabled = true;
             this.listBoxEnum.ItemHeight = 12;
@@ -195,14 +202,15 @@
             this.listBoxEnum.TabIndex = 1;
             this.listBoxEnum.SelectedIndexChanged += new System.EventHandler(this.listBoxEnum_SelectedIndexChanged);
             // 
-            // enumListContextMenuStrip
+            // EnumListContextMenuStrip
             // 
-            this.enumListContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.EnumListContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.ToolStripMenuItemAddEnum,
             this.ToolStripMenuItemModifyEnum,
-            this.ToolStripMenuItemDeleteEnum});
-            this.enumListContextMenuStrip.Name = "enumListContextMenuStrip";
-            this.enumListContextMenuStrip.Size = new System.Drawing.Size(101, 70);
+            this.ToolStripMenuItemDeleteEnum,
+            this.genCodeToolStripMenuItem});
+            this.EnumListContextMenuStrip.Name = "enumListContextMenuStrip";
+            this.EnumListContextMenuStrip.Size = new System.Drawing.Size(131, 92);
             // 
             // ToolStripMenuItemAddEnum
             // 
@@ -286,6 +294,7 @@
             this.textBoxSearchMessage.Name = "textBoxSearchMessage";
             this.textBoxSearchMessage.Size = new System.Drawing.Size(147, 21);
             this.textBoxSearchMessage.TabIndex = 0;
+            this.textBoxSearchMessage.TextChanged += new System.EventHandler(this.textBoxSearchMessage_TextChanged);
             // 
             // button1
             // 
@@ -300,6 +309,7 @@
             // 
             // listBoxMessage
             // 
+            this.listBoxMessage.ContextMenuStrip = this.MessageContextMenuStrip;
             this.listBoxMessage.Dock = System.Windows.Forms.DockStyle.Fill;
             this.listBoxMessage.FormattingEnabled = true;
             this.listBoxMessage.ItemHeight = 12;
@@ -308,6 +318,37 @@
             this.listBoxMessage.Size = new System.Drawing.Size(205, 456);
             this.listBoxMessage.TabIndex = 1;
             this.listBoxMessage.SelectedIndexChanged += new System.EventHandler(this.listBoxMessage_SelectedIndexChanged);
+            // 
+            // MessageContextMenuStrip
+            // 
+            this.MessageContextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ToolStripMenuItemAddMessage,
+            this.ToolStripMenuItemModifyMessage,
+            this.ToolStripMenuItemDeleteMessage,
+            this.genCodeToolStripMenuItem1});
+            this.MessageContextMenuStrip.Name = "dataContextMenuStrip";
+            this.MessageContextMenuStrip.Size = new System.Drawing.Size(153, 114);
+            // 
+            // ToolStripMenuItemAddMessage
+            // 
+            this.ToolStripMenuItemAddMessage.Name = "ToolStripMenuItemAddMessage";
+            this.ToolStripMenuItemAddMessage.Size = new System.Drawing.Size(100, 22);
+            this.ToolStripMenuItemAddMessage.Text = "添加";
+            this.ToolStripMenuItemAddMessage.Click += new System.EventHandler(this.ToolStripMenuItemAddMessage_Click);
+            // 
+            // ToolStripMenuItemModifyMessage
+            // 
+            this.ToolStripMenuItemModifyMessage.Name = "ToolStripMenuItemModifyMessage";
+            this.ToolStripMenuItemModifyMessage.Size = new System.Drawing.Size(100, 22);
+            this.ToolStripMenuItemModifyMessage.Text = "修改";
+            this.ToolStripMenuItemModifyMessage.Click += new System.EventHandler(this.ToolStripMenuItemModifyMessage_Click);
+            // 
+            // ToolStripMenuItemDeleteMessage
+            // 
+            this.ToolStripMenuItemDeleteMessage.Name = "ToolStripMenuItemDeleteMessage";
+            this.ToolStripMenuItemDeleteMessage.Size = new System.Drawing.Size(100, 22);
+            this.ToolStripMenuItemDeleteMessage.Text = "删除";
+            this.ToolStripMenuItemDeleteMessage.Click += new System.EventHandler(this.ToolStripMenuItemDeleteMessage_Click);
             // 
             // richTextBoxMessage
             // 
@@ -358,7 +399,7 @@
             this.textBoxProtoBinFilePath.Name = "textBoxProtoBinFilePath";
             this.textBoxProtoBinFilePath.Size = new System.Drawing.Size(387, 21);
             this.textBoxProtoBinFilePath.TabIndex = 13;
-            this.textBoxProtoBinFilePath.TextChanged += new System.EventHandler(this.textBoxNameSpace_TextChanged);
+            this.textBoxProtoBinFilePath.TextChanged += new System.EventHandler(this.UpdateTabSettingPage);
             // 
             // label5
             // 
@@ -376,7 +417,7 @@
             this.textBoxNameSpace.Name = "textBoxNameSpace";
             this.textBoxNameSpace.Size = new System.Drawing.Size(387, 21);
             this.textBoxNameSpace.TabIndex = 11;
-            this.textBoxNameSpace.TextChanged += new System.EventHandler(this.textBoxNameSpace_TextChanged);
+            this.textBoxNameSpace.TextChanged += new System.EventHandler(this.UpdateTabSettingPage);
             // 
             // label4
             // 
@@ -394,7 +435,7 @@
             this.textBoxCSharpFileOutPath.Name = "textBoxCSharpFileOutPath";
             this.textBoxCSharpFileOutPath.Size = new System.Drawing.Size(387, 21);
             this.textBoxCSharpFileOutPath.TabIndex = 9;
-            this.textBoxCSharpFileOutPath.TextChanged += new System.EventHandler(this.textBoxNameSpace_TextChanged);
+            this.textBoxCSharpFileOutPath.TextChanged += new System.EventHandler(this.UpdateTabSettingPage);
             // 
             // textBoxProtoFileOutPath
             // 
@@ -402,7 +443,7 @@
             this.textBoxProtoFileOutPath.Name = "textBoxProtoFileOutPath";
             this.textBoxProtoFileOutPath.Size = new System.Drawing.Size(387, 21);
             this.textBoxProtoFileOutPath.TabIndex = 8;
-            this.textBoxProtoFileOutPath.TextChanged += new System.EventHandler(this.textBoxNameSpace_TextChanged);
+            this.textBoxProtoFileOutPath.TextChanged += new System.EventHandler(this.UpdateTabSettingPage);
             // 
             // textBoxCurrentWorkDir
             // 
@@ -443,6 +484,20 @@
             this.label1.TabIndex = 3;
             this.label1.Text = "ProtoFileOutPath";
             // 
+            // genCodeToolStripMenuItem
+            // 
+            this.genCodeToolStripMenuItem.Name = "genCodeToolStripMenuItem";
+            this.genCodeToolStripMenuItem.Size = new System.Drawing.Size(152, 22);
+            this.genCodeToolStripMenuItem.Text = "GenCode";
+            this.genCodeToolStripMenuItem.Click += new System.EventHandler(this.genCodeToolStripMenuItem_Click);
+            // 
+            // genCodeToolStripMenuItem1
+            // 
+            this.genCodeToolStripMenuItem1.Name = "genCodeToolStripMenuItem1";
+            this.genCodeToolStripMenuItem1.Size = new System.Drawing.Size(152, 22);
+            this.genCodeToolStripMenuItem1.Text = "GenCode";
+            this.genCodeToolStripMenuItem1.Click += new System.EventHandler(this.genCodeToolStripMenuItem_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
@@ -460,7 +515,7 @@
             this.tableLayoutPanel3.ResumeLayout(false);
             this.panel3.ResumeLayout(false);
             this.panel3.PerformLayout();
-            this.enumListContextMenuStrip.ResumeLayout(false);
+            this.EnumListContextMenuStrip.ResumeLayout(false);
             this.tabPageMessage.ResumeLayout(false);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
@@ -469,6 +524,7 @@
             this.tableLayoutPanel2.ResumeLayout(false);
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
+            this.MessageContextMenuStrip.ResumeLayout(false);
             this.tabPageSetting.ResumeLayout(false);
             this.tabPageSetting.PerformLayout();
             this.ResumeLayout(false);
@@ -507,10 +563,16 @@
         private System.Windows.Forms.TextBox textBoxSearchEnum;
         private System.Windows.Forms.ListBox listBoxEnum;
         private System.Windows.Forms.RichTextBox richTextBoxMessage;
-        private System.Windows.Forms.ContextMenuStrip enumListContextMenuStrip;
+        private System.Windows.Forms.ContextMenuStrip EnumListContextMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemAddEnum;
         private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemModifyEnum;
         private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemDeleteEnum;
+        private System.Windows.Forms.ContextMenuStrip MessageContextMenuStrip;
+        private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemAddMessage;
+        private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemModifyMessage;
+        private System.Windows.Forms.ToolStripMenuItem ToolStripMenuItemDeleteMessage;
+        private System.Windows.Forms.ToolStripMenuItem genCodeToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem genCodeToolStripMenuItem1;
     }
 }
 

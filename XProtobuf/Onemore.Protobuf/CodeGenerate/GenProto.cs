@@ -77,7 +77,7 @@ namespace Onemore.Protobuf.CodeGenerate
             {
                 AppendLine(0, "syntax = \"proto3\";");
             }
-            AppendLine(0, "// auto generate by Onemore.Protobuf, do not edit!!");
+            AppendLine(0, "// Auto generate by Onemore.Protobuf. Do not edit!");
             AppendLine();
 
             if(string.IsNullOrEmpty(manager.m_namespace) == false)

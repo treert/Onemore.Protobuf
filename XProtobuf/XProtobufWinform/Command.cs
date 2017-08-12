@@ -84,6 +84,7 @@ namespace XProtobufWinform
                 {
                     GenCSharp.GenCode(mgr, EditorConf.singleton.m_CSharpFileOutPath);
                 }
+                MessageBox.Show("Generate Code OK");
             }
         }
     }
