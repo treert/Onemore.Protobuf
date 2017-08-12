@@ -90,7 +90,7 @@ namespace XSerialize
             }
         }
 
-        public string SerializeToString<T>(object obj)
+        public string SerializeToString<T>(T obj)
         {
             return SerializeToString(obj, typeof(T));
         }
