@@ -47,6 +47,7 @@ namespace XProtobufWinform
                 textBoxName.Text = modify_name;
                 textBoxIndex.Text = _modify_index.ToString();
                 comboxTypeName.Text = m_FieldInfo.m_type_name;
+                checkBoxRepeated.Checked = m_FieldInfo.m_is_array;
             }
             else
             {
@@ -144,7 +145,7 @@ namespace XProtobufWinform
             m_FieldInfo.m_name = name;
             m_FieldInfo.m_type = type;
             m_FieldInfo.m_type_name = name_type;
-            m_FieldInfo.m_is_array = radioRepeat.Checked;
+            m_FieldInfo.m_is_array = checkBoxRepeated.Checked;
 
             _message.m_message.m_fields[name] = m_FieldInfo;
 

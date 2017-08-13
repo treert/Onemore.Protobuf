@@ -74,7 +74,7 @@ namespace XProtobufWinform
             }
             if(m_IsAddNew)
             {
-                if(EditorMessageManager.singleton.GetByName(name) != null)
+                if(EditorMessageManager.singleton.CheckNameAreadyExist(name))
                 {
                     MessageBox.Show("Name ["+name+"] aready exist.");
                     return;

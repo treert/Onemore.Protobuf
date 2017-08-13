@@ -45,7 +45,7 @@ namespace XProtobufWinform
         ListViewItem CreateListViewItemByField(FieldInfo field)
         {
             ListViewItem item = new ListViewItem(field.m_index.ToString());
-            item.SubItems.Add(field.m_type_name);
+            item.SubItems.Add(field.m_type_name + (field.m_is_array ? "[]" : ""));
             item.SubItems.Add(field.m_name);
             return item;
         }
@@ -61,7 +61,7 @@ namespace XProtobufWinform
 
             if(IsAddNew)
             {
-                if(EditorMessageManager.singleton.GetByName(name) != null)
+                if(EditorMessageManager.singleton.CheckNameAreadyExist(name))
                 {
                     MessageBox.Show("Name [" + name + "] aready exist.");
                     return;
@@ -108,13 +108,13 @@ namespace XProtobufWinform
             }
 
             var item = listDataField.SelectedItems[0];
-            var dialog = new MessageFieldEditDialog(m_Message, item.SubItems[0].Text);
+            var dialog = new MessageFieldEditDialog(m_Message, item.SubItems[2].Text);
             if (dialog.ShowDialog() == DialogResult.OK)
             {
                 var field = dialog.m_FieldInfo;
                 item.SubItems[0].Text = field.m_index.ToString();
-                item.SubItems[1].Text = field.m_type_name;
-                item.SubItems[1].Text = field.m_name;
+                item.SubItems[1].Text = field.m_type_name + (field.m_is_array ? "[]" : "");
+                item.SubItems[2].Text = field.m_name;
             }
         }
     }

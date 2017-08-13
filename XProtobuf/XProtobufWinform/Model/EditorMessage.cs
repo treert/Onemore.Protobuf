@@ -25,7 +25,7 @@ namespace XProtobufWinform.Model
             return ret;
         }
 
-        public bool CheckNameCanUse(string name)
+        public bool CheckNameAreadyExist(string name)
         {
             if(GetByName(name) != null)
             {
@@ -335,11 +335,7 @@ namespace XProtobufWinform.Model
             sb.AppendLine();
             foreach(var field in m_message.m_fields.Values.OrderBy(t_ => t_.m_index))
             {
-                sb.AppendFormat("{0}. {1} {2}", field.m_index, field.m_type_name, field.m_name);
-                if(field.m_is_array)
-                {
-                    sb.Append("[]");
-                }
+                sb.AppendFormat("{0}. {1}{3} {2}", field.m_index, field.m_type_name, field.m_name, (field.m_is_array ? "[]" : ""));
                 sb.AppendLine();
             }
             sb.AppendLine();

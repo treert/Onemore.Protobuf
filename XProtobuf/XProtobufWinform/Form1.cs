@@ -278,7 +278,7 @@ namespace XProtobufWinform
             }
             if (EditorMessageManager.singleton.CheckMessageHasBeDepends(message))
             {
-                MessageBox.Show("Message [" + listBoxEnum.Text + "] has be used by some message, check it.");
+                MessageBox.Show("Message [" + listBoxMessage.Text + "] has be used by some message, check it.");
                 return;
             }
             EditorMessageManager.singleton.DeleteMessage(message);
@@ -289,6 +289,57 @@ namespace XProtobufWinform
         private void genCodeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Command.GenCode();
+        }
+
+        private void RichTextSelect_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                RichTextBox txt_box = (RichTextBox)sender;
+                string txt = txt_box.SelectedText.Trim();
+                var message = EditorMessageManager.singleton.GetByName(txt);
+
+                if (message != null)
+                {
+                    MenuItem menu_item;
+                    if (message.m_enum != null)
+                    {
+                        // enum
+                        menu_item = new MenuItem("Enum: " + txt);
+                        menu_item.Click += new EventHandler((object sender_, EventArgs e_) =>
+                        {
+                            tabControl1.SelectedTab = tabPageEnum;
+                            listBoxEnum.Text = txt;
+                            UpdateRichText(txt_box, message);
+                        });
+
+                    }
+                    else if(message.m_message != null)
+                    {
+                        // message
+                        menu_item = new MenuItem("Message: " + txt);
+                        menu_item.Click += new EventHandler((object sender_, EventArgs e_) =>
+                        {
+                            tabControl1.SelectedTab = tabPageMessage;
+                            listBoxMessage.Text = txt;
+                            UpdateRichText(txt_box, message);
+                        });
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+
+                    ContextMenu menu = new ContextMenu();
+
+                    menu.MenuItems.Add(menu_item);
+                    txt_box.ContextMenu = menu;
+                }
+                else
+                {
+                    txt_box.ContextMenu = null;
+                }
+            }
         }
     }
 }

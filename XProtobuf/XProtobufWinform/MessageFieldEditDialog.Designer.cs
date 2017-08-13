@@ -37,7 +37,7 @@
             this.button2 = new System.Windows.Forms.Button();
             this.label3 = new System.Windows.Forms.Label();
             this.textBoxIndex = new System.Windows.Forms.TextBox();
-            this.radioRepeat = new System.Windows.Forms.RadioButton();
+            this.checkBoxRepeated = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // comboxTypeName
@@ -124,22 +124,22 @@
             this.textBoxIndex.Size = new System.Drawing.Size(206, 21);
             this.textBoxIndex.TabIndex = 27;
             // 
-            // radioRepeat
+            // checkBoxRepeated
             // 
-            this.radioRepeat.AutoSize = true;
-            this.radioRepeat.Location = new System.Drawing.Point(317, 136);
-            this.radioRepeat.Name = "radioRepeat";
-            this.radioRepeat.Size = new System.Drawing.Size(71, 16);
-            this.radioRepeat.TabIndex = 29;
-            this.radioRepeat.Text = "repeated";
-            this.radioRepeat.UseVisualStyleBackColor = true;
+            this.checkBoxRepeated.AutoSize = true;
+            this.checkBoxRepeated.Location = new System.Drawing.Point(317, 136);
+            this.checkBoxRepeated.Name = "checkBoxRepeated";
+            this.checkBoxRepeated.Size = new System.Drawing.Size(72, 16);
+            this.checkBoxRepeated.TabIndex = 30;
+            this.checkBoxRepeated.Text = "repeated";
+            this.checkBoxRepeated.UseVisualStyleBackColor = true;
             // 
             // MessageFieldEditDialog
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(417, 267);
-            this.Controls.Add(this.radioRepeat);
+            this.Controls.Add(this.checkBoxRepeated);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.textBoxIndex);
             this.Controls.Add(this.comboxTypeName);
@@ -166,6 +166,6 @@
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.TextBox textBoxIndex;
-        private System.Windows.Forms.RadioButton radioRepeat;
+        private System.Windows.Forms.CheckBox checkBoxRepeated;
     }
 }
