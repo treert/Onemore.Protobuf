@@ -34,10 +34,7 @@
 
 using System;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 
 namespace Onemore.Protobuf
@@ -54,6 +51,8 @@ namespace Onemore.Protobuf
             byte ReadByte();
             long GetPos();
             void Skip(int size);
+
+            bool IsAtEnd();
         }
 
         class BytesInput: IInput
@@ -111,13 +110,16 @@ namespace Onemore.Protobuf
                 }
                 _pos += size;
             }
+
+            public bool IsAtEnd()
+            {
+                return _pos >= _length;
+            }
         }
 
         class StreamInput:IInput
         {
             Stream _stream;
-            int _pos = 0;
-            int _length = 0;
 
             public StreamInput(Stream input)
             {
@@ -157,6 +159,11 @@ namespace Onemore.Protobuf
                 {
                     throw new Exception("skip stream failed, has no enough data");
                 }
+            }
+
+            public bool IsAtEnd()
+            {
+                return _stream.Position >= _stream.Length;
             }
         }
 
@@ -217,6 +224,10 @@ namespace Onemore.Protobuf
         /// </summary>
         public uint ReadTag()
         {
+            if(_input.IsAtEnd())
+            {
+                return 0;// this is why index start from 1
+            }
             return ReadRawVarint32();
         }
 

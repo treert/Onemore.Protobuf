@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Onemore.Protobuf
 {
@@ -66,6 +62,45 @@ namespace Onemore.Protobuf
                     return "float";
                 default:
                     throw new Exception();
+            }
+        }
+
+        public static FieldType ConvertNameToFieldType(string name)
+        {
+            switch(name)
+            {
+                default:
+                    return FieldType.InValid;
+                case "int32":
+                    return FieldType.Int32;
+                case "uint32":
+                    return FieldType.UInt32;
+                case "int64":
+                    return FieldType.Int64;
+                case "uint64":
+                    return FieldType.UInt64;
+                case "bool":
+                    return FieldType.Bool;
+                case "sint32":
+                    return FieldType.SInt32;
+                case "sint64":
+                    return FieldType.SInt64;
+                case "string":
+                    return FieldType.String;
+                case "bytes":
+                    return FieldType.Bytes;
+                case "fixed64":
+                    return FieldType.Fixed64;
+                case "sfixed64":
+                    return FieldType.SFixed64;
+                case "double":
+                    return FieldType.Double;
+                case "fixed32":
+                    return FieldType.Fixed32;
+                case "sfixed32":
+                    return FieldType.SFixed32;
+                case "float":
+                    return FieldType.Float;
             }
         }
 

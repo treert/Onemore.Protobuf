@@ -1,10 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using WireType = Onemore.Protobuf.WireFormat.WireType;
 namespace Onemore.Protobuf
 {
     public class Node
@@ -165,7 +160,11 @@ namespace Onemore.Protobuf
 
         public void ReadFrom(InputStream input)
         {
-            InternalReadFrom(input);
+            uint tag;
+            while ((tag = input.ReadTag()) != 0)
+            {
+                ReadOneField(input, tag);
+            }
         }
 
         public static MessageNode Create(MessageInfo message)
@@ -181,31 +180,7 @@ namespace Onemore.Protobuf
             while(input.Position < end_pos)
             {
                 uint tag = input.ReadTag();
-                WireFormat.WireType wire_type = WireFormat.GetTagWireType(tag);
-                int index = WireFormat.GetTagFieldNumber(tag);
-                FieldInfo field_info;
-                if(_message.m_index_to_fileds.TryGetValue(index, out field_info))
-                {
-
-                    Node node;
-                    if(_fields.TryGetValue(field_info.m_name, out node) == false)
-                    {
-                        node = Node.CreateNodeByFieldInfo(field_info);
-                        _fields.Add(field_info.m_name, node);
-                    }
-                    if(field_info.m_is_array)
-                    {
-                        (node as RepeatedNode).ReadFromForMessageNode(input, wire_type);
-                    }
-                    else
-                    {
-                        node.InternalReadFrom(input);
-                    }
-                }
-                else
-                {
-                    input.SkipField(wire_type);
-                }
+                ReadOneField(input, tag);
             }
             if (input.Position != end_pos)
             {
@@ -213,9 +188,37 @@ namespace Onemore.Protobuf
             }
         }
 
+        private void ReadOneField(InputStream input, uint tag)
+        {
+            WireFormat.WireType wire_type = WireFormat.GetTagWireType(tag);
+            int index = WireFormat.GetTagFieldNumber(tag);
+            FieldInfo field_info;
+            if (_message.m_index_to_fileds.TryGetValue(index, out field_info))
+            {
+
+                Node node;
+                if (_fields.TryGetValue(field_info.m_name, out node) == false)
+                {
+                    node = Node.CreateNodeByFieldInfo(field_info);
+                    _fields.Add(field_info.m_name, node);
+                }
+                if (field_info.m_is_array)
+                {
+                    (node as RepeatedNode).ReadFromForMessageNode(input, wire_type);
+                }
+                else
+                {
+                    node.InternalReadFrom(input);
+                }
+            }
+            else
+            {
+                input.SkipField(wire_type);
+            }
+        }
+
         internal override void InternalWriteTo(OutputStream output)
         {
-            output.WriteLength(_inner_size);
             foreach (var item in _fields)
             {
                 var field = item.Value;
@@ -225,14 +228,17 @@ namespace Onemore.Protobuf
                 {
                     output.WriteTag(field_info.m_tag);
                 }
+                if(field_info.m_type == FieldFormat.FieldType.Message)
+                {
+                    output.WriteLength(field.GetComputeSize());
+                }
                 field.InternalWriteTo(output);
             }
         }
-
-        private int _inner_size = 0;
+        
         internal override void ComputeSize()
         {
-            _inner_size = 0;
+            _size = 0;
             foreach (var item in _fields)
             {
                 var field = item.Value;
@@ -241,15 +247,18 @@ namespace Onemore.Protobuf
                 field.ComputeSize();
                 if (field_info.m_is_array)
                 {
-                    _inner_size += field.GetComputeSize();// ReatedNode write tag it's self
+                    _size += field.GetComputeSize();// ReatedNode write tag it's self
                 }
                 else
                 {
-                    _inner_size += OutputStream.ComputeTagSize(field_info.m_tag);
-                    _inner_size += field.GetComputeSize();
+                    _size += OutputStream.ComputeTagSize(field_info.m_tag);
+                    _size += field.GetComputeSize();
+                    if(field_info.m_type == FieldFormat.FieldType.Message)
+                    {
+                        OutputStream.ComputeLengthSize(field.GetComputeSize());
+                    }
                 }
             }
-            _size = _inner_size + OutputStream.ComputeLengthSize(_inner_size);
         }
     }
 
@@ -300,7 +309,7 @@ namespace Onemore.Protobuf
             return (T)GetArrayNode(idx).ConvertToObj();
         }
 
-        private int _inner_size = 0;
+        private int _packed_size = 0;
         internal override void ComputeSize()
         {
             if(_items.Count == 0)
@@ -311,14 +320,14 @@ namespace Onemore.Protobuf
             int tag_size = OutputStream.ComputeTagSize(_field_info.m_tag);
             if (_field_info.m_is_packed)
             {
-                _inner_size = 0;
+                _packed_size = 0;
                 foreach (var node in _items)
                 {
                     // assert((node is RepeatedNode) == false)
                     node.ComputeSize();
-                    _inner_size += node.GetComputeSize();
+                    _packed_size += node.GetComputeSize();
                 }
-                _size = tag_size + _inner_size + OutputStream.ComputeLengthSize(_inner_size);
+                _size = tag_size + _packed_size + OutputStream.ComputeLengthSize(_packed_size);
             }
             else
             {
@@ -328,6 +337,10 @@ namespace Onemore.Protobuf
                     node.ComputeSize();
                     _size += tag_size;
                     _size += node.GetComputeSize();
+                    if (_field_info.m_type == FieldFormat.FieldType.Message)
+                    {
+                        _size += OutputStream.ComputeLengthSize(node.GetComputeSize());
+                    }
                 }
             }
         }
@@ -369,7 +382,7 @@ namespace Onemore.Protobuf
             if(_field_info.m_is_packed)
             {
                 output.WriteTag(_field_info.m_tag);
-                output.WriteLength(_inner_size);
+                output.WriteLength(_packed_size);
                 foreach(var node in _items)
                 {
                     node.InternalWriteTo(output);

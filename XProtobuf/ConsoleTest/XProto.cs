@@ -6,34 +6,28 @@ using InputStream = Onemore.Protobuf.InputStream;
 using OutputStream = Onemore.Protobuf.OutputStream;
 using WireFormat = Onemore.Protobuf.WireFormat;
 using WireType = Onemore.Protobuf.WireFormat.WireType;
+using IMessage = Onemore.Protobuf.IMessage;
 
 namespace XProto {
-    public sealed class A
+    public sealed class A : IMessage
     {
         public int a
         {
-            get { __aSpecified = true; return __a; }
+            get { return __a; }
             set { __aSpecified = true; __a = value; }
         }
-        public bool aSpecified { get{ return __aSpecified; } }
+        public bool aSpecified { get{ return __aSpecified; } set{ __aSpecified = value; } }
         private int __a;
         private bool __aSpecified;
-        private int __a__size;
 
         public B b
         {
-            get {
-                if (__bSpecified == false) {
-                    __bSpecified = true;
-                    __b = new B();
-                }
-                return __b;
-            }
+            get { return __b; }
+            set { __bSpecified = true; __b = value; }
         }
-        public bool bSpecified { get{ return __bSpecified; } }
+        public bool bSpecified { get{ return __bSpecified; } set{ __bSpecified = value; } }
         private B __b;
         private bool __bSpecified;
-        private int __b__size;
 
         public List<int> c
         {
@@ -45,145 +39,160 @@ namespace XProto {
                 return __c;
             }
         }
-        public bool cSpecified { get{ return __cSpecified; } }
+        public bool cSpecified { get{ return __cSpecified; } set{ __cSpecified = value; } }
         private List<int> __c;
         private bool __cSpecified;
-        private int __c__size;
         private int __c__packed_size;
 
-        public void WriteTo(OutputStream output)
+        public void WriteTo(OutputStream _output)
         {
             if (_size == 0) CalculateSize();
-            output.WriteLength(_inner_size);
             if (__aSpecified) {
-                output.WriteInt32(__a);
+                _output.WriteTag(8);
+                _output.WriteInt32(__a);
             }
             if (__bSpecified) {
-                __b.WriteTo(output);
+                _output.WriteTag(18);
+                _output.WriteLength(__b.GetSize());
+                __b.WriteTo(_output);
             }
             if (__cSpecified) {
-                output.WriteTag(26);
-                output.WriteLength(__c__packed_size);
+                _output.WriteTag(26);
+                _output.WriteLength(__c__packed_size);
                 foreach (var _item in __c) {
-                    output.WriteInt32(_item);
+                    _output.WriteInt32(_item);
                 }
             }
         }
 
         public void ReadFrom(InputStream _input)
         {
-            var _end_pos = _input.Position + _input.ReadLength();
+            uint _tag;
+            while ((_tag = _input.ReadTag()) != 0) { ReadOneField(_input, _tag); }
+        }
+        internal void InternalReadFrom(InputStream _input)
+        {
+            var _message_len = _input.ReadLength();
+            var _end_pos = _input.Position + _message_len;
             while(_input.Position < _end_pos) {
                 uint _tag = _input.ReadTag();
-                WireType _wire_type = WireFormat.GetTagWireType(_tag);
-                int _index = WireFormat.GetTagFieldNumber(_tag);
-                switch (_index) {
-                    case 1:
-                        a = _input.ReadInt32();
-                        break;
-                    case 2:
-                        b.ReadFrom(_input);
-                        break;
-                    case 3:
-                        if (_wire_type == WireType.LengthDelimited) {
-                            int _len = _input.ReadLength();
-                            var _end_pos_arr = _input.Position + _len;
-                            while(_input.Position < _end_pos_arr) {
+                ReadOneField(_input, _tag);
+            }
+        }
+        private void ReadOneField(InputStream _input, uint _tag)
+        {
+            WireType _wire_type = WireFormat.GetTagWireType(_tag);
+            int _index = WireFormat.GetTagFieldNumber(_tag);
+            switch (_index) {
+                case 1:
+                    a = _input.ReadInt32();
+                    break;
+                case 2:
+                    __b = new B();
+                    b.InternalReadFrom(_input);
+                    break;
+                case 3:
+                    if (_wire_type == WireType.LengthDelimited) {
+                        int _len = _input.ReadLength();
+                        var _end_pos_arr = _input.Position + _len;
+                        while(_input.Position < _end_pos_arr) {
                                 var _item = _input.ReadInt32();
-                                c.Add(_item);
-                            }
-                        }
-                        else { 
-                            var _item = _input.ReadInt32();
                             c.Add(_item);
                         }
-                        break;
-                    default:
-                        _input.SkipField(_wire_type);
-                        break;
-                }
+                    }
+                    else { 
+                        var _item = _input.ReadInt32();
+                        c.Add(_item);
+                    }
+                    break;
+                default:
+                    _input.SkipField(_wire_type);
+                    break;
             }
         }
 
-        private int _inner_size = 0;
         private int _size = 0;
         public int GetSize() { return _size; }
 
         public int CalculateSize()
         {
-            _inner_size = 0;
+            _size = 0;
             if (__aSpecified) {
-                __a__size = OutputStream.ComputeInt32Size(__a);
-                _inner_size += 1 + __a__size;
+                _size += 1 + OutputStream.ComputeInt32Size(__a);
             }
             if (__bSpecified) {
-                __b__size = __b.CalculateSize();
-                _inner_size += 1 + __b__size;
+                _size += 1 + __b.CalculateSize() + OutputStream.ComputeLengthSize(__b.GetSize());
             }
             if (__cSpecified) {
+                int _arr_size = 0;
                 __c__packed_size = 0;
                 foreach (var _item in __c) {
                     __c__packed_size += OutputStream.ComputeInt32Size(_item);
                 }
-                __c__size = 1 + __c__packed_size + OutputStream.ComputeLengthSize(__c__packed_size);
-                _inner_size += __c__size;
+                _arr_size = 1 + __c__packed_size + OutputStream.ComputeLengthSize(__c__packed_size);
+                _size += _arr_size;
             }
-            _size = _inner_size + OutputStream.ComputeLengthSize(_inner_size);
             return _size;
         }
     }
 
-    public sealed class B
+    public sealed class B : IMessage
     {
         public string bb
         {
-            get { __bbSpecified = true; return __bb; }
+            get { return __bb; }
             set { __bbSpecified = true; __bb = value; }
         }
-        public bool bbSpecified { get{ return __bbSpecified; } }
+        public bool bbSpecified { get{ return __bbSpecified; } set{ __bbSpecified = value; } }
         private string __bb;
         private bool __bbSpecified;
-        private int __bb__size;
 
-        public void WriteTo(OutputStream output)
+        public void WriteTo(OutputStream _output)
         {
             if (_size == 0) CalculateSize();
-            output.WriteLength(_inner_size);
             if (__bbSpecified) {
-                output.WriteString(__bb);
+                _output.WriteTag(10);
+                _output.WriteString(__bb);
             }
         }
 
         public void ReadFrom(InputStream _input)
         {
-            var _end_pos = _input.Position + _input.ReadLength();
+            uint _tag;
+            while ((_tag = _input.ReadTag()) != 0) { ReadOneField(_input, _tag); }
+        }
+        internal void InternalReadFrom(InputStream _input)
+        {
+            var _message_len = _input.ReadLength();
+            var _end_pos = _input.Position + _message_len;
             while(_input.Position < _end_pos) {
                 uint _tag = _input.ReadTag();
-                WireType _wire_type = WireFormat.GetTagWireType(_tag);
-                int _index = WireFormat.GetTagFieldNumber(_tag);
-                switch (_index) {
-                    case 1:
-                        bb = _input.ReadString();
-                        break;
-                    default:
-                        _input.SkipField(_wire_type);
-                        break;
-                }
+                ReadOneField(_input, _tag);
+            }
+        }
+        private void ReadOneField(InputStream _input, uint _tag)
+        {
+            WireType _wire_type = WireFormat.GetTagWireType(_tag);
+            int _index = WireFormat.GetTagFieldNumber(_tag);
+            switch (_index) {
+                case 1:
+                    bb = _input.ReadString();
+                    break;
+                default:
+                    _input.SkipField(_wire_type);
+                    break;
             }
         }
 
-        private int _inner_size = 0;
         private int _size = 0;
         public int GetSize() { return _size; }
 
         public int CalculateSize()
         {
-            _inner_size = 0;
+            _size = 0;
             if (__bbSpecified) {
-                __bb__size = OutputStream.ComputeStringSize(__bb);
-                _inner_size += 1 + __bb__size;
+                _size += 1 + OutputStream.ComputeStringSize(__bb);
             }
-            _size = _inner_size + OutputStream.ComputeLengthSize(_inner_size);
             return _size;
         }
     }

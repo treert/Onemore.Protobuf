@@ -1,9 +1,6 @@
-﻿using System;
-using System.IO;
-using System.Collections.Generic;
+﻿using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Onemore.Protobuf.CodeGenerate
 {
@@ -23,7 +20,7 @@ namespace Onemore.Protobuf.CodeGenerate
 
         static string InnerGenProto(MessageManager manager, string file)
         {
-            _buffer.Clear();
+            _buffer.Length = 0;
             GenMessageManager(manager);
             var content = _buffer.ToString();
             if (string.IsNullOrEmpty(file) == false)

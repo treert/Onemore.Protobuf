@@ -3,7 +3,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 
 namespace Onemore.Protobuf.CodeGenerate
@@ -15,7 +14,7 @@ namespace Onemore.Protobuf.CodeGenerate
     {
         public static string GenCode(MessageManager manager, string file = null)
         {
-            _buffer.Clear();
+            _buffer.Length = 0;
             GenMessageManager(manager);
             var content = _buffer.ToString();
             if (string.IsNullOrEmpty(file) == false)
@@ -72,6 +71,7 @@ namespace Onemore.Protobuf.CodeGenerate
             AppendLine(0, @"using OutputStream = Onemore.Protobuf.OutputStream;");
             AppendLine(0, @"using WireFormat = Onemore.Protobuf.WireFormat;");
             AppendLine(0, @"using WireType = Onemore.Protobuf.WireFormat.WireType;");
+            AppendLine(0, @"using IMessage = Onemore.Protobuf.IMessage;");
             AppendLine();
             AppendLine(0, "namespace {0} {{", manager.m_namespace);
             foreach (var penum in manager.m_enums.Values)
@@ -93,14 +93,14 @@ namespace Onemore.Protobuf.CodeGenerate
             AppendLine(1, "{");
             foreach (var item in penum.m_items.OrderBy(item_ => item_.Value))
             {
-                AppendLine(2, "{0} = {1};", item.Key, item.Value);
+                AppendLine(2, "{0} = {1},", item.Key, item.Value);
             }
             AppendLine(1, "}");
         }
 
         static void GenMessage(MessageInfo message)
         {
-            AppendLine(1, "public sealed class {0}", message.m_name);
+            AppendLine(1, "public sealed class {0} : IMessage", message.m_name);
             AppendLine(1, "{");
             PreGenField(message);
             foreach (var field in cur_gen_fields)
@@ -128,6 +128,7 @@ namespace Onemore.Protobuf.CodeGenerate
             public string name_size;
             public string name_packed_size;
             public string name_type;
+            public string name_type_item;// for array
 
             public FieldInfo field_info;
 
@@ -139,10 +140,14 @@ namespace Onemore.Protobuf.CodeGenerate
                     case FieldFormat.FieldType.InValid:
                         throw new NotSupportedException();
                     case FieldFormat.FieldType.Message:
-                        AppendLine(indent, "{0}.WriteTo(output);", write_name);
+                        AppendLine(indent, "_output.WriteLength({0}.GetSize());", write_name);
+                        AppendLine(indent, "{0}.WriteTo(_output);", write_name);
+                        break;
+                    case FieldFormat.FieldType.Enum:
+                        AppendLine(indent, "_output.WriteEnum((int){0});", write_name);
                         break;
                     default:
-                        AppendLine(indent, "output.Write{1}({0});", write_name, Enum.GetName(typeof(FieldFormat.FieldType), field_info.m_type));
+                        AppendLine(indent, "_output.Write{1}({0});", write_name, Enum.GetName(typeof(FieldFormat.FieldType), field_info.m_type));
                         break;
                 }
             }
@@ -158,9 +163,24 @@ namespace Onemore.Protobuf.CodeGenerate
                     case FieldFormat.FieldType.Message:
                         if(need_new)
                         {
-                            AppendLine(indent, "var {0} = new {1}();", read_name, name_type);
+                            AppendLine(indent, "var {0} = new {1}();", read_name, name_type_item);
                         }
-                        AppendLine(indent, "{0}.ReadFrom(_input);", read_name);
+                        // todo only for dragonnest
+                        else
+                        {
+                            AppendLine(indent, "{0} = new {1}();", name_define, name_type_item);
+                        }
+                        AppendLine(indent, "{0}.InternalReadFrom(_input);", read_name);
+                        break;
+                    case FieldFormat.FieldType.Enum:
+                        if (need_new)
+                        {
+                            AppendLine(indent, "var {0} = ({1})_input.ReadEnum();", read_name, name_type_item);
+                        }
+                        else
+                        {
+                            AppendLine(indent, "{0} = ({1})_input.ReadEnum();", read_name, name_type_item);
+                        }
                         break;
                     default:
                         if(need_new)
@@ -182,7 +202,10 @@ namespace Onemore.Protobuf.CodeGenerate
                     case FieldFormat.FieldType.InValid:
                         throw new NotSupportedException();
                     case FieldFormat.FieldType.Message:
-                        AppendFormat("{0}.CalculateSize();", var_name);
+                        AppendFormat("{0}.CalculateSize() + OutputStream.ComputeLengthSize({0}.GetSize());", var_name);
+                        break;
+                    case FieldFormat.FieldType.Enum:
+                        AppendFormat("OutputStream.ComputeEnumSize((int){0});", var_name);
                         break;
                     default:
                         AppendFormat("OutputStream.Compute{0}Size({1});",
@@ -206,15 +229,15 @@ namespace Onemore.Protobuf.CodeGenerate
 
                 gen_field.name_define = "__" + gen_field.name_get;
                 gen_field.name_has_set = "__" + gen_field.name_get_has_set;
-                gen_field.name_size = "__" + gen_field.name_get + "__size";
                 gen_field.name_packed_size = "__" + gen_field.name_get + "__packed_size";
-                if(field.m_is_array)
+                gen_field.name_type_item = GetFieldTypeName(field);
+                if (field.m_is_array)
                 {
-                    gen_field.name_type = string.Format("List<{0}>", GetFieldTypeName(field));
+                    gen_field.name_type = string.Format("List<{0}>", gen_field.name_type_item);
                 }
                 else
                 {
-                    gen_field.name_type = GetFieldTypeName(field);
+                    gen_field.name_type = gen_field.name_type_item;
                 }
                 cur_gen_fields.Add(gen_field);
             }
@@ -227,35 +250,57 @@ namespace Onemore.Protobuf.CodeGenerate
             {
 	            AppendLine(2, "public {0} {1}", gen_field.name_type, gen_field.name_get);
 	            AppendLine(2, "{");
-	            if(field.m_type == FieldFormat.FieldType.Message || field.m_is_array)
-	            {
-	                AppendLine(3, "get {");
-	                {
-	                    AppendLine(4, "if ({0} == false) {{", gen_field.name_has_set);
-	                    {
-		                    AppendLine(5, "{0} = true;", gen_field.name_has_set);
-		                    AppendLine(5, "{0} = new {1}();", gen_field.name_define, gen_field.name_type);
-	                    }
-	                    AppendLine(4, "}");
-	                }
-	                {
-	                    AppendLine(4, "return {0};", gen_field.name_define);
-	                }
-	                AppendLine(3, "}");
-	            }
-	            else
-	            {
-	                AppendLine(3, "get {{ {0} = true; return {1}; }}", gen_field.name_has_set, gen_field.name_define);
-	                AppendLine(3, "set {{ {0} = true; {1} = value; }}",gen_field.name_has_set, gen_field.name_define);
-	            }
-	            AppendLine(2, "}");
+	            //if(field.m_type == FieldFormat.FieldType.Message || field.m_is_array)
+	            //{
+	            //    AppendLine(3, "get {");
+	            //    {
+	            //        AppendLine(4, "if ({0} == false) {{", gen_field.name_has_set);
+	            //        {
+		           //         AppendLine(5, "{0} = true;", gen_field.name_has_set);
+		           //         AppendLine(5, "{0} = new {1}();", gen_field.name_define, gen_field.name_type);
+	            //        }
+	            //        AppendLine(4, "}");
+	            //    }
+	            //    {
+	            //        AppendLine(4, "return {0};", gen_field.name_define);
+	            //    }
+	            //    AppendLine(3, "}");
+	            //}
+	            //else
+	            //{
+	            //    AppendLine(3, "get {{ {0} = true; return {1}; }}", gen_field.name_has_set, gen_field.name_define);
+	            //    AppendLine(3, "set {{ {0} = true; {1} = value; }}",gen_field.name_has_set, gen_field.name_define);
+	            //}
+                
+                // for dragonnest game
+                if (field.m_is_array)
+                {
+                    AppendLine(3, "get {");
+                    {
+                        AppendLine(4, "if ({0} == false) {{", gen_field.name_has_set);
+                        {
+                            AppendLine(5, "{0} = true;", gen_field.name_has_set);
+                            AppendLine(5, "{0} = new {1}();", gen_field.name_define, gen_field.name_type);
+                        }
+                        AppendLine(4, "}");
+                    }
+                    {
+                        AppendLine(4, "return {0};", gen_field.name_define);
+                    }
+                    AppendLine(3, "}");
+                }
+                else
+                {
+                    AppendLine(3, "get {{ return {0}; }}", gen_field.name_define);
+                    AppendLine(3, "set {{ {0} = true; {1} = value; }}", gen_field.name_has_set, gen_field.name_define);
+                }
+                AppendLine(2, "}");
             }
             // Other
             {
-                AppendLine(2, "public bool {0} {{ get{{ return {1}; }} }}", gen_field.name_get_has_set, gen_field.name_has_set);
+                AppendLine(2, "public bool {0} {{ get{{ return {1}; }} set{{ {1} = value; }} }}", gen_field.name_get_has_set, gen_field.name_has_set);
                 AppendLine(2, "private {0} {1};", gen_field.name_type, gen_field.name_define);
                 AppendLine(2, "private bool {0};", gen_field.name_has_set);
-                AppendLine(2, "private int {0};", gen_field.name_size);
                 if(field.m_is_packed)
                 {
                     AppendLine(2, "private int {0};", gen_field.name_packed_size);
@@ -265,11 +310,10 @@ namespace Onemore.Protobuf.CodeGenerate
 
         static void GenMessageWriteTo(MessageInfo message)
         {
-            AppendLine(2, "public void WriteTo(OutputStream output)");
+            AppendLine(2, "public void WriteTo(OutputStream _output)");
             AppendLine(2, "{");
             {
                 AppendLine(3, "if (_size == 0) CalculateSize();");
-                AppendLine(3, "output.WriteLength(_inner_size);");
                 foreach (var gen_field in cur_gen_fields)
                 {
                     var field = gen_field.field_info;
@@ -278,8 +322,8 @@ namespace Onemore.Protobuf.CodeGenerate
                     {
                         if(field.m_is_packed)
                         {
-                            AppendLine(4, "output.WriteTag({0});", field.m_tag);
-                            AppendLine(4, "output.WriteLength({0});", gen_field.name_packed_size);
+                            AppendLine(4, "_output.WriteTag({0});", field.m_tag);
+                            AppendLine(4, "_output.WriteLength({0});", gen_field.name_packed_size);
                             AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
                             gen_field.GenWriteCode(5, "_item");
                             AppendLine(4, "}");
@@ -287,13 +331,14 @@ namespace Onemore.Protobuf.CodeGenerate
                         else
                         {
                             AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
-                            AppendLine(5, "output.WriteTag({0});", field.m_tag);
+                            AppendLine(5, "_output.WriteTag({0});", field.m_tag);
                             gen_field.GenWriteCode(5, "_item");
                             AppendLine(4, "}");
                         }
                     }
                     else
                     {
+                        AppendLine(4, "_output.WriteTag({0});", field.m_tag);
                         gen_field.GenWriteCode(4);
                     }
                     AppendLine(3, "}");
@@ -307,63 +352,79 @@ namespace Onemore.Protobuf.CodeGenerate
             AppendLine(2, "public void ReadFrom(InputStream _input)");
             AppendLine(2, "{");
             {
-                AppendLine(3, "var _end_pos = _input.Position + _input.ReadLength();");
+                AppendLine(3, "uint _tag;");
+                AppendLine(3, "while ((_tag = _input.ReadTag()) != 0) { ReadOneField(_input, _tag); }");
+            }
+            AppendLine(2, "}");
+
+            AppendLine(2, "internal void InternalReadFrom(InputStream _input)");
+            AppendLine(2, "{");
+            {
+                AppendLine(3, "var _message_len = _input.ReadLength();");
+                AppendLine(3, "var _end_pos = _input.Position + _message_len;");
                 AppendLine(3, "while(_input.Position < _end_pos) {");
                 {
-                    AppendLine(4, "uint _tag = _input.ReadTag();");
-                    AppendLine(4, "WireType _wire_type = WireFormat.GetTagWireType(_tag);");
-                    AppendLine(4, "int _index = WireFormat.GetTagFieldNumber(_tag);");
-                    AppendLine(4, "switch (_index) {");
-                    foreach(var gen_field in cur_gen_fields)
+	                AppendLine(4, "uint _tag = _input.ReadTag();");
+	                AppendLine(4, "ReadOneField(_input, _tag);");
+                }
+                AppendLine(3, "}");
+            }
+            AppendLine(2, "}");
+
+            AppendLine(2, "private void ReadOneField(InputStream _input, uint _tag)");
+            AppendLine(2, "{");
+            {
+                AppendLine(3, "WireType _wire_type = WireFormat.GetTagWireType(_tag);");
+                AppendLine(3, "int _index = WireFormat.GetTagFieldNumber(_tag);");
+                AppendLine(3, "switch (_index) {");
+                foreach (var gen_field in cur_gen_fields)
+                {
+                    var field = gen_field.field_info;
+                    AppendLine(4, "case {0}:", field.m_index);
+                    if (field.m_is_array)
                     {
-                        var field = gen_field.field_info;
-                        AppendLine(5, "case {0}:", field.m_index);
-                        if(field.m_is_array)
+                        if (field.m_is_packed)
                         {
-                            if(field.m_is_packed)
+                            AppendLine(5, "if (_wire_type == WireType.LengthDelimited) {");
                             {
-                                AppendLine(6, "if (_wire_type == WireType.LengthDelimited) {");
+                                AppendLine(6, "int _len = _input.ReadLength();");
+                                AppendLine(6, "var _end_pos_arr = _input.Position + _len;");
+                                AppendLine(6, "while(_input.Position < _end_pos_arr) {");
                                 {
-	                                AppendLine(7, "int _len = _input.ReadLength();");
-	                                AppendLine(7, "var _end_pos_arr = _input.Position + _len;");
-	                                AppendLine(7, "while(_input.Position < _end_pos_arr) {");
-                                    {
-                                        gen_field.GenReadCode(8, "_item");
-                                        AppendLine(8, "{0}.Add(_item);", gen_field.name_get);
-                                    }
-	                                AppendLine(7, "}");
-                                }
-                                AppendLine(6, "}");
-                                AppendLine(6, "else { ");
-                                {
-                                    gen_field.GenReadCode(7, "_item");
+                                    gen_field.GenReadCode(8, "_item");
                                     AppendLine(7, "{0}.Add(_item);", gen_field.name_get);
                                 }
                                 AppendLine(6, "}");
                             }
-                            else
+                            AppendLine(5, "}");
+                            AppendLine(5, "else { ");
                             {
-                                AppendLine(6, "{");
-                                {
-                                    gen_field.GenReadCode(7, "_item");
-                                    AppendLine(7, "{0}.Add(_item)", gen_field.name_get);
-                                }
-                                AppendLine(6, "}");
+                                gen_field.GenReadCode(6, "_item");
+                                AppendLine(6, "{0}.Add(_item);", gen_field.name_get);
                             }
-                            AppendLine(6, "break;");
+                            AppendLine(5, "}");
                         }
                         else
                         {
-                            gen_field.GenReadCode(6);
-                            AppendLine(6, "break;");
+                            AppendLine(5, "{");
+                            {
+                                gen_field.GenReadCode(6, "_item");
+                                AppendLine(6, "{0}.Add(_item);", gen_field.name_get);
+                            }
+                            AppendLine(5, "}");
                         }
+                        AppendLine(5, "break;");
                     }
+                    else
                     {
-                        AppendLine(5, "default:");
-                        AppendLine(6, "_input.SkipField(_wire_type);");
-                        AppendLine(6, "break;");
+                        gen_field.GenReadCode(5);
+                        AppendLine(5, "break;");
                     }
-                    AppendLine(4, "}");
+                }
+                {
+                    AppendLine(4, "default:");
+                    AppendLine(5, "_input.SkipField(_wire_type);");
+                    AppendLine(5, "break;");
                 }
                 AppendLine(3, "}");
             }
@@ -375,7 +436,7 @@ namespace Onemore.Protobuf.CodeGenerate
             AppendLine(2, "public int CalculateSize()");
             AppendLine(2, "{");
             {
-                AppendLine(3, "_inner_size = 0;");
+                AppendLine(3, "_size = 0;");
                 foreach (var gen_field in cur_gen_fields)
                 {
                     var field = gen_field.field_info;
@@ -383,6 +444,7 @@ namespace Onemore.Protobuf.CodeGenerate
                     int tag_size = OutputStream.ComputeTagSize(field.m_tag);
                     if (field.m_is_array)
                     {
+                        AppendLine(4, "int _arr_size = 0;");
                         if (field.m_is_packed)
                         {
                             AppendLine(4, "{0} = 0;", gen_field.name_packed_size);
@@ -393,34 +455,28 @@ namespace Onemore.Protobuf.CodeGenerate
                                 AppendLine();
                             }
                             AppendLine(4, "}");
-                            AppendLine(4, "{0} = {1} + {2} + OutputStream.ComputeLengthSize({2});",
-                                gen_field.name_size,
-                                tag_size,
-                                gen_field.name_packed_size);
+                            AppendLine(4, "_arr_size = {0} + {1} + OutputStream.ComputeLengthSize({1});", tag_size, gen_field.name_packed_size);
                         }
                         else
                         {
-                            AppendLine(4, "{0} = 0;", gen_field.name_size);
                             AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
                             {
-                                Append(5, "{0} += {1} + ", gen_field.name_size, tag_size);
+                                Append(5, "_arr_size += {0} + ", tag_size);
                                 gen_field.GenCalculateCodeSnippet("_item");
                                 AppendLine();
                             }
                             AppendLine(4, "}");
                         }
-                        AppendLine(4, "_inner_size += {0};", gen_field.name_size);
+                        AppendLine(4, "_size += _arr_size;");
                     }
                     else
                     {
-                        Append(4, "{0} = ", gen_field.name_size);
+                        Append(4, "_size += {0} + ", tag_size);
                         gen_field.GenCalculateCodeSnippet(gen_field.name_define);
                         AppendLine();
-                        AppendLine(4, "_inner_size += {0} + {1};", tag_size, gen_field.name_size);
                     }
                     AppendLine(3, "}");
                 }
-                AppendLine(3, "_size = _inner_size + OutputStream.ComputeLengthSize(_inner_size);");
                 AppendLine(3, "return _size;");
             }
             AppendLine(2, "}");
@@ -428,7 +484,6 @@ namespace Onemore.Protobuf.CodeGenerate
 
         static void GenMessageGetSize(MessageInfo message)
         {
-            AppendLine(2, "private int _inner_size = 0;");
             AppendLine(2, "private int _size = 0;");
             AppendLine(2, "public int GetSize() { return _size; }");
         }
