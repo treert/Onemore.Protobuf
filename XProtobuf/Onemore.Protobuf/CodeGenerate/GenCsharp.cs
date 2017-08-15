@@ -168,7 +168,7 @@ namespace Onemore.Protobuf.CodeGenerate
                         // todo only for dragonnest
                         else
                         {
-                            AppendLine(indent, "{0} = new {1}();", name_define, name_type_item);
+                            AppendLine(indent, "if ({0} == null) {{ {0} = new {1}(); }}", read_name, name_type_item);
                         }
                         AppendLine(indent, "{0}.InternalReadFrom(_input);", read_name);
                         break;
