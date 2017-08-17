@@ -324,15 +324,15 @@ namespace Onemore.Protobuf.CodeGenerate
                         {
                             AppendLine(4, "_output.WriteTag({0});", field.m_tag);
                             AppendLine(4, "_output.WriteLength({0});", gen_field.name_packed_size);
-                            AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
-                            gen_field.GenWriteCode(5, "_item");
+                            AppendLine(4, "for (var _i = 0; _i < {0}.Count; ++_i) {{", gen_field.name_define);
+                            gen_field.GenWriteCode(5, gen_field.name_define + "[_i]");
                             AppendLine(4, "}");
                         }
                         else
                         {
-                            AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
+                            AppendLine(4, "for (var _i = 0; _i < {0}.Count; ++_i) {{", gen_field.name_define);
                             AppendLine(5, "_output.WriteTag({0});", field.m_tag);
-                            gen_field.GenWriteCode(5, "_item");
+                            gen_field.GenWriteCode(5, gen_field.name_define + "[_i]");
                             AppendLine(4, "}");
                         }
                     }
@@ -448,8 +448,9 @@ namespace Onemore.Protobuf.CodeGenerate
                         if (field.m_is_packed)
                         {
                             AppendLine(4, "{0} = 0;", gen_field.name_packed_size);
-                            AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
+                            AppendLine(4, "for (var _i = 0; _i < {0}.Count; ++_i) {{", gen_field.name_define);
                             {
+                                AppendLine(5, "var _item = {0}[_i];", gen_field.name_define);
                                 Append(5, "{0} += ", gen_field.name_packed_size);
                                 gen_field.GenCalculateCodeSnippet("_item");
                                 AppendLine();
@@ -459,8 +460,9 @@ namespace Onemore.Protobuf.CodeGenerate
                         }
                         else
                         {
-                            AppendLine(4, "foreach (var _item in {0}) {{", gen_field.name_define);
+                            AppendLine(4, "for (var _i = 0; _i < {0}.Count; ++_i) {{", gen_field.name_define);
                             {
+                                AppendLine(5, "var _item = {0}[_i];", gen_field.name_define);
                                 Append(5, "_arr_size += {0} + ", tag_size);
                                 gen_field.GenCalculateCodeSnippet("_item");
                                 AppendLine();

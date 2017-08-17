@@ -48,6 +48,7 @@ namespace Onemore.Protobuf
         interface IInput
         {
             void ReadBytes(byte[] buffer);
+            void ReadBytes(byte[] buffer, int length);
             byte ReadByte();
             long GetPos();
             void Skip(int size);
@@ -86,6 +87,15 @@ namespace Onemore.Protobuf
                 _pos += buffer.Length;
             }
 
+            public void ReadBytes(byte[] buffer, int length)
+            {
+                if (_pos + length > _length)
+                {
+                    throw new Exception("has not enough data");
+                }
+                Buffer.BlockCopy(_buffer, _pos, buffer, 0, length);
+                _pos += length;
+            }
             public byte ReadByte()
             {
                 if (_pos + 1 > _length)
@@ -135,6 +145,15 @@ namespace Onemore.Protobuf
                 }
             }
 
+            public void ReadBytes(byte[] buffer, int length)
+            {
+                int len = _stream.Read(buffer, 0, length);
+                if (len < length)
+                {
+                    throw new Exception("has not enough data");
+                }
+            }
+
             public byte ReadByte()
             {
                 int data = _stream.ReadByte();
@@ -168,6 +187,8 @@ namespace Onemore.Protobuf
         }
 
         IInput _input;
+        const int BufferSize = 4096;
+        static byte[] _buffer = new byte[BufferSize];
 
         /// <summary>
         /// Creates a new <see cref="InputStream"/> reading data from the given byte array.
@@ -244,12 +265,15 @@ namespace Onemore.Protobuf
         /// </summary>
         public float ReadFloat()
         {
-            byte[] rawBytes = ReadRawBytes(4);
-            if (!BitConverter.IsLittleEndian)
+            lock(_buffer)
             {
-                rawBytes = rawBytes.Reverse().ToArray();
+                _input.ReadBytes(_buffer, 4);
+                //if (!BitConverter.IsLittleEndian)
+                //{
+                //    rawBytes = rawBytes.Reverse().ToArray();
+                //}
+                return BitConverter.ToSingle(_buffer, 0);
             }
-            return BitConverter.ToSingle(rawBytes, 0);
         }
 
         /// <summary>
@@ -307,9 +331,17 @@ namespace Onemore.Protobuf
         {
             int length = ReadLength();
             // No need to read any data for an empty string.
-            if (length == 0)
+            if (length <= 0)
             {
                 return "";
+            }
+            else if(length <= BufferSize)
+            {
+                lock(_buffer)
+                {
+                    _input.ReadBytes(_buffer, length);
+                    return System.Text.Encoding.UTF8.GetString(_buffer, 0, length);
+                }
             }
             return System.Text.Encoding.UTF8.GetString(ReadRawBytes(length), 0, length);
         }
