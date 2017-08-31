@@ -171,10 +171,10 @@ namespace Onemore.Protobuf
         public void WriteFloat(float value)
         {
             byte[] rawBytes = BitConverter.GetBytes(value);
-            //if (!BitConverter.IsLittleEndian)
-            //{
-            //    rawBytes = rawBytes.Reverse().ToArray();
-            //}
+            if (!BitConverter.IsLittleEndian)
+            {
+                Array.Reverse(rawBytes);
+            }
             WriteRawBytes(rawBytes, 0, 4);
         }
 

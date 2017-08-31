@@ -45,7 +45,7 @@ namespace Onemore.Protobuf
     public sealed class InputStream
     {
 
-        interface IInput
+        public interface IInput
         {
             void ReadBytes(byte[] buffer);
             void ReadBytes(byte[] buffer, int length);
@@ -56,21 +56,26 @@ namespace Onemore.Protobuf
             bool IsAtEnd();
         }
 
-        class BytesInput: IInput
+        public class BytesInput : IInput
         {
 
             byte[] _buffer = null;
             int _pos = 0;
             int _length = 0;
 
+            public BytesInput() { }
+
             public BytesInput(byte[] buffer)
             {
-                _buffer = buffer;
-                _pos = 0;
-                _length = buffer.Length;
+                Reset(buffer, 0, buffer.Length);
             }
 
             public BytesInput(byte[] buffer, int offset, int length)
+            {
+                Reset(buffer, offset, length);
+            }
+
+            public void Reset(byte[] buffer, int offset, int length)
             {
                 _buffer = buffer;
                 _pos = offset;
@@ -127,11 +132,18 @@ namespace Onemore.Protobuf
             }
         }
 
-        class StreamInput:IInput
+        public class StreamInput :IInput
         {
-            Stream _stream;
+            Stream _stream = null;
+
+            public StreamInput() { }
 
             public StreamInput(Stream input)
+            {
+                _stream = input;
+            }
+
+            public void Reset(Stream input)
             {
                 _stream = input;
             }
@@ -186,9 +198,18 @@ namespace Onemore.Protobuf
             }
         }
 
-        IInput _input;
+        IInput _input = null;
         const int BufferSize = 4096;
-        static byte[] _buffer = new byte[BufferSize];
+        /// <summary>
+        /// Buffer to avoid to many gc, it's better use one InputStream for one thread
+        /// </summary>
+        byte[] _buffer = new byte[BufferSize];
+
+        public IInput mInput { get { return _input; } set { _input = value; } }
+
+        public InputStream()
+        {
+        }
 
         /// <summary>
         /// Creates a new <see cref="InputStream"/> reading data from the given byte array.
@@ -268,10 +289,10 @@ namespace Onemore.Protobuf
             lock(_buffer)
             {
                 _input.ReadBytes(_buffer, 4);
-                //if (!BitConverter.IsLittleEndian)
-                //{
-                //    rawBytes = rawBytes.Reverse().ToArray();
-                //}
+                if (!BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(_buffer, 0, 4);
+                }
                 return BitConverter.ToSingle(_buffer, 0);
             }
         }
