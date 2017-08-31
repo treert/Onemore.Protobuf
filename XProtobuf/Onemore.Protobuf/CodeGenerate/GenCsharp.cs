@@ -125,7 +125,7 @@ namespace Onemore.Protobuf.CodeGenerate
 
             public string name_define;
             public string name_has_set;
-            public string name_size;
+            // public string name_size;
             public string name_packed_size;
             public string name_type;
             public string name_type_item;// for array
@@ -165,7 +165,6 @@ namespace Onemore.Protobuf.CodeGenerate
                         {
                             AppendLine(indent, "var {0} = new {1}();", read_name, name_type_item);
                         }
-                        // todo only for dragonnest
                         else
                         {
                             AppendLine(indent, "if ({0} == null) {{ {0} = new {1}(); }}", read_name, name_type_item);
@@ -250,60 +249,69 @@ namespace Onemore.Protobuf.CodeGenerate
             {
 	            AppendLine(2, "public {0} {1}", gen_field.name_type, gen_field.name_get);
 	            AppendLine(2, "{");
-	            //if(field.m_type == FieldFormat.FieldType.Message || field.m_is_array)
-	            //{
-	            //    AppendLine(3, "get {");
-	            //    {
-	            //        AppendLine(4, "if ({0} == false) {{", gen_field.name_has_set);
-	            //        {
-		           //         AppendLine(5, "{0} = true;", gen_field.name_has_set);
-		           //         AppendLine(5, "{0} = new {1}();", gen_field.name_define, gen_field.name_type);
-	            //        }
-	            //        AppendLine(4, "}");
-	            //    }
-	            //    {
-	            //        AppendLine(4, "return {0};", gen_field.name_define);
-	            //    }
-	            //    AppendLine(3, "}");
-	            //}
-	            //else
-	            //{
-	            //    AppendLine(3, "get {{ {0} = true; return {1}; }}", gen_field.name_has_set, gen_field.name_define);
-	            //    AppendLine(3, "set {{ {0} = true; {1} = value; }}",gen_field.name_has_set, gen_field.name_define);
-	            //}
-                
-                // for dragonnest game
                 if (field.m_is_array)
                 {
-                    AppendLine(3, "get {");
-                    {
-                        AppendLine(4, "if ({0} == false) {{", gen_field.name_has_set);
-                        {
-                            AppendLine(5, "{0} = true;", gen_field.name_has_set);
-                            AppendLine(5, "{0} = new {1}();", gen_field.name_define, gen_field.name_type);
-                        }
-                        AppendLine(4, "}");
-                    }
-                    {
-                        AppendLine(4, "return {0};", gen_field.name_define);
-                    }
-                    AppendLine(3, "}");
+                    AppendLine(3, "get {{ return {0}; }}", gen_field.name_define);
+                }
+                else if (field.m_type == FieldFormat.FieldType.Message)
+                {
+                    AppendLine(3, "get {{ return {0}; }}", gen_field.name_define);
+                    AppendLine(3, "set {{ {0} = value; }}", gen_field.name_define, gen_field.name_has_set);
+                }
+                else if (field.m_type == FieldFormat.FieldType.String)
+                {
+                    AppendLine(3, "get {{ return {0} ?? \"\"; }}", gen_field.name_define);
+                    AppendLine(3, "set {{ {0} = value; }}", gen_field.name_define, gen_field.name_has_set);
+                }
+                else if(field.m_type == FieldFormat.FieldType.Bytes)
+                {
+                    AppendLine(3, "get {{ return {0}; }}", gen_field.name_define);
+                    AppendLine(3, "set {{ {0} = value; }}", gen_field.name_define, gen_field.name_has_set);
                 }
                 else
                 {
                     AppendLine(3, "get {{ return {0}; }}", gen_field.name_define);
-                    AppendLine(3, "set {{ {0} = true; {1} = value; }}", gen_field.name_has_set, gen_field.name_define);
+                    AppendLine(3, "set {{ {0} = value; {1} = true; }}", gen_field.name_define, gen_field.name_has_set);
                 }
                 AppendLine(2, "}");
             }
-            // Other
+            // define field, has set field, packed size
             {
-                AppendLine(2, "public bool {0} {{ get{{ return {1}; }} set{{ {1} = value; }} }}", gen_field.name_get_has_set, gen_field.name_has_set);
-                AppendLine(2, "private {0} {1};", gen_field.name_type, gen_field.name_define);
-                AppendLine(2, "private bool {0};", gen_field.name_has_set);
-                if(field.m_is_packed)
+                // define field
+                if(field.m_is_array)
                 {
-                    AppendLine(2, "private int {0};", gen_field.name_packed_size);
+                    AppendLine(2, "private {0} {1} = new {0}();", gen_field.name_type, gen_field.name_define);
+                    if (field.m_is_packed)
+                    {
+                        AppendLine(2, "private int {0};", gen_field.name_packed_size);
+                    }
+                }
+                else
+                {
+                    AppendLine(2, "private {0} {1};", gen_field.name_type, gen_field.name_define);
+                }
+
+                // has set field
+                if (field.m_is_array)
+                {
+                    AppendLine(2, "public bool {0} {{ get{{ return {1}.Count > 0; }} }}", gen_field.name_get_has_set, gen_field.name_define);
+                }
+                else if(field.m_type == FieldFormat.FieldType.Message)
+                {
+                    AppendLine(2, "public bool {0} {{ get{{ return {1} != null; }} }}", gen_field.name_get_has_set, gen_field.name_define);
+                }
+                else if(field.m_type == FieldFormat.FieldType.String)
+                {
+                    AppendLine(2, "public bool {0} {{ get{{ return {1} != null; }} }}", gen_field.name_get_has_set, gen_field.name_define);
+                }
+                else if (field.m_type == FieldFormat.FieldType.Bytes)
+                {
+                    AppendLine(2, "public bool {0} {{ get{{ return {1} != null; }} }}", gen_field.name_get_has_set, gen_field.name_define);
+                }
+                else
+                {
+                    AppendLine(2, "private bool {0};", gen_field.name_has_set);
+                    AppendLine(2, "public bool {0} {{ get{{ return {1}; }} set{{ {1} = value; }} }}", gen_field.name_get_has_set, gen_field.name_has_set);
                 }
             }
         }
@@ -317,7 +325,7 @@ namespace Onemore.Protobuf.CodeGenerate
                 foreach (var gen_field in cur_gen_fields)
                 {
                     var field = gen_field.field_info;
-                    AppendLine(3, "if ({0}) {{", gen_field.name_has_set);
+                    AppendLine(3, "if ({0}) {{", gen_field.name_get_has_set);
                     if(field.m_is_array)
                     {
                         if(field.m_is_packed)
@@ -440,7 +448,7 @@ namespace Onemore.Protobuf.CodeGenerate
                 foreach (var gen_field in cur_gen_fields)
                 {
                     var field = gen_field.field_info;
-                    AppendLine(3, "if ({0}) {{", gen_field.name_has_set);
+                    AppendLine(3, "if ({0}) {{", gen_field.name_get_has_set);
                     int tag_size = OutputStream.ComputeTagSize(field.m_tag);
                     if (field.m_is_array)
                     {
