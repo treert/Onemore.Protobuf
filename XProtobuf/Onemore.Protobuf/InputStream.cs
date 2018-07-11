@@ -286,15 +286,12 @@ namespace Onemore.Protobuf
         /// </summary>
         public float ReadFloat()
         {
-            lock(_buffer)
+            _input.ReadBytes(_buffer, 4);
+            if (!BitConverter.IsLittleEndian)
             {
-                _input.ReadBytes(_buffer, 4);
-                if (!BitConverter.IsLittleEndian)
-                {
-                    Array.Reverse(_buffer, 0, 4);
-                }
-                return BitConverter.ToSingle(_buffer, 0);
+                Array.Reverse(_buffer, 0, 4);
             }
+            return BitConverter.ToSingle(_buffer, 0);
         }
 
         /// <summary>
@@ -358,11 +355,8 @@ namespace Onemore.Protobuf
             }
             else if(length <= BufferSize)
             {
-                lock(_buffer)
-                {
-                    _input.ReadBytes(_buffer, length);
-                    return System.Text.Encoding.UTF8.GetString(_buffer, 0, length);
-                }
+                _input.ReadBytes(_buffer, length);
+                return System.Text.Encoding.UTF8.GetString(_buffer, 0, length);
             }
             return System.Text.Encoding.UTF8.GetString(ReadRawBytes(length), 0, length);
         }
