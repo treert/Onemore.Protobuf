@@ -528,15 +528,15 @@ namespace Onemore.Protobuf.CodeGenerate
                 case FieldFormat.FieldType.Message:
                     return field_info.m_type_name;
                 case FieldFormat.FieldType.Fixed64:
-                    return "fixed64";
+                    return "ulong";
                 case FieldFormat.FieldType.SFixed64:
-                    return "sfixed64";
+                    return "long";
                 case FieldFormat.FieldType.Double:
                     return "double";
                 case FieldFormat.FieldType.Fixed32:
-                    return "fixed32";
+                    return "uint";
                 case FieldFormat.FieldType.SFixed32:
-                    return "sfixed32";
+                    return "int";
                 case FieldFormat.FieldType.Float:
                     return "float";
                 default:
